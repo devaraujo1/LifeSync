@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Assistente IA — LifeSync Personal Life OS">
+  <meta name="theme-color" content="#050505">
+  <title>Assistente | LifeSync</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@200;300;400;500;600;700&display=swap">
+  <script>
+    try {
+      var p = JSON.parse(localStorage.getItem('lifesync-preferencias')) || {}
+      var r = document.documentElement
+      if (p.destaque) r.dataset.accent = p.destaque
+      r.dataset.aurora = { animado: 'animada', estatico: 'estatica', desligado: 'desligada' }[p.fundo] || 'animada'
+      if (p.densidade) r.dataset.densidade = p.densidade
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="aurora aurora-soft" aria-hidden="true">
+    <span class="a1"></span><span class="a2"></span><span class="a3"></span>
+  </div>
+
+  <div class="app" data-page="assistente">
+    <main class="assistente-page" id="assistente-page">
+      <div class="ai-layout" id="ai-layout">
+        <aside class="ai-rail" id="ai-rail" aria-label="Histórico de conversas">
+          <div class="ai-rail-head">
+            <button type="button" class="btn btn-primary ai-nova" id="ai-nova">
+              <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+              Nova conversa
+            </button>
+            <button type="button" class="assistente-icon-btn ai-rail-close" id="ai-rail-fechar" aria-label="Recolher histórico" title="Recolher histórico">
+              <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
+            </button>
+          </div>
+          <p class="ai-rail-label">Histórico</p>
+          <div class="ai-rail-list" id="ai-rail-list" role="list"></div>
+        </aside>
+
+        <div class="ai-shell">
+          <header class="ai-chat-top">
+            <div class="ai-chat-top-main">
+              <button type="button" class="assistente-icon-btn ai-rail-toggle" id="ai-rail-toggle" aria-label="Recolher histórico" aria-controls="ai-rail" aria-expanded="true" title="Histórico">
+                <svg class="icon" aria-hidden="true"><use href="#i-menu"></use></svg>
+              </button>
+              <div class="ai-chat-heading">
+                <p class="kicker">LifeSync</p>
+                <h1 id="ai-titulo">Assistente</h1>
+              </div>
+            </div>
+            <span class="ai-status" id="ai-status" aria-live="polite">Verificando…</span>
+          </header>
+
+          <div class="ai-stage" id="ai-stage">
+            <div class="ai-scroll" id="ai-scroll">
+              <div class="ai-empty" id="ai-empty">
+                <div class="ai-empty-mark" aria-hidden="true">
+                  <img src="/brand/lifesync-mark.svg" alt="" width="40" height="40" />
+                </div>
+                <h2 class="ai-empty-title">O que você precisa?</h2>
+                <p class="ai-empty-lead">Finanças, agenda, tarefas e anotações — em português, no seu LifeSync.</p>
+                <div class="ai-suggestions" id="ai-suggestions" role="list"></div>
+              </div>
+              <div class="assistente-msgs ai-msgs" id="ai-msgs" role="log" aria-live="polite"></div>
+            </div>
+
+            <form class="ai-composer" id="ai-form" autocomplete="off">
+              <div class="ai-composer-card">
+                <textarea class="assistente-input ai-composer-input" id="ai-input" rows="1" placeholder="Digite sua mensagem…" maxlength="4000" enterkeyhint="send"></textarea>
+                <div class="assistente-toolbar ai-composer-toolbar">
+                  <div class="assistente-tools" id="ai-tools"></div>
+                  <button type="submit" class="assistente-send" id="ai-enviar" aria-label="Enviar"></button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="ai-rail-backdrop" id="ai-rail-backdrop" hidden></div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/entradas/assistente.js"></script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tarefas — LifeSync Personal Life OS">
+  <meta name="theme-color" content="#050505">
+  <title>Tarefas | LifeSync</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@200;300;400;500;600;700&display=swap">
+  <script>
+    try {
+      var p = JSON.parse(localStorage.getItem('lifesync-preferencias')) || {}
+      var r = document.documentElement
+      if (p.destaque) r.dataset.accent = p.destaque
+      r.dataset.aurora = { animado: 'animada', estatico: 'estatica', desligado: 'desligada' }[p.fundo] || 'animada'
+      if (p.densidade) r.dataset.densidade = p.densidade
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="aurora aurora-soft" aria-hidden="true">
+    <span class="a1"></span><span class="a2"></span><span class="a3"></span>
+  </div>
+
+  <div class="app" data-page="tarefas">
+    <main class="page tasks-page" id="tarefas-page">
+      <header class="page-header" data-enter>
+        <p class="kicker">LifeSync</p>
+        <h1>Tarefas</h1>
+        <p class="page-lead">Lista e kanban — prioridade, etiquetas e checklist.</p>
+      </header>
+
+      <div class="page-toolbar tasks-toolbar" data-reveal>
+        <div class="view-toggle" role="group" aria-label="Vista">
+          <button type="button" data-vista="lista" aria-pressed="true">Lista</button>
+          <button type="button" data-vista="kanban" aria-pressed="false">Kanban</button>
+        </div>
+        <label class="field-inline">
+          <span class="sr-only">Dia de referência</span>
+          <input type="date" id="tasks-ref-day" aria-label="Dia de referência do status">
+        </label>
+        <span class="spacer"></span>
+        <button class="btn btn-primary" id="tasks-add" type="button">
+          <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+          Nova tarefa
+        </button>
+      </div>
+
+      <div class="filters tasks-filters" id="tasks-filters" role="group" aria-label="Filtros" data-reveal>
+        <button type="button" data-filtro="todas" aria-pressed="true">Todas</button>
+        <button type="button" data-filtro="ativas" aria-pressed="false">Ativas</button>
+        <button type="button" data-filtro="concluidas" aria-pressed="false">Concluídas</button>
+        <button type="button" data-filtro="atrasadas" aria-pressed="false">Atrasadas</button>
+        <select class="select" id="tasks-filter-priority" aria-label="Prioridade">
+          <option value="">Prioridade</option>
+          <option value="alta">Alta</option>
+          <option value="media">Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+        <select class="select" id="tasks-filter-tag" aria-label="Etiqueta">
+          <option value="">Etiqueta</option>
+        </select>
+      </div>
+
+      <section class="page-panel tasks-board" id="tasks-board" aria-live="polite" data-reveal></section>
+    </main>
+  </div>
+
+  <dialog class="modal" id="tasks-dialog" aria-labelledby="tasks-dialog-title">
+    <form class="modal-form" id="tasks-form" novalidate>
+      <div class="tasks-modal-head">
+        <div>
+          <p class="kicker" id="tasks-dialog-kicker">NOVA TAREFA</p>
+          <h2 id="tasks-dialog-title">Adicionar tarefa</h2>
+        </div>
+        <button class="icon-btn" id="tasks-cancel-x" type="button" aria-label="Fechar">
+          <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+        </button>
+      </div>
+
+      <div class="tasks-modal-body">
+        <label class="field">
+          Título
+          <input id="tasks-input" type="text" maxlength="300" autocomplete="off" placeholder="Ex.: Entregar proposta" required>
+        </label>
+
+        <div class="tasks-modal-section">
+          <p class="tasks-modal-section-label">Tipo e data</p>
+          <div class="tasks-segmented segmented" role="group" aria-label="Tipo">
+            <button type="button" data-kind="unica" aria-pressed="true">Única</button>
+            <button type="button" data-kind="recorrente" aria-pressed="false">Recorrente</button>
+          </div>
+
+          <label class="field" id="tasks-date-field">
+            Data da tarefa
+            <input id="tasks-date" type="date">
+          </label>
+
+          <div class="field" id="tasks-days-field" hidden>
+            Dias da semana
+            <div class="weekdays" id="tasks-weekdays" role="group" aria-label="Dias da semana"></div>
+          </div>
+        </div>
+
+        <div class="tasks-modal-section">
+          <p class="tasks-modal-section-label">Prioridade e prazo</p>
+          <div class="form-grid-2">
+            <label class="field">
+              Prioridade
+              <select class="select" id="tasks-priority">
+                <option value="baixa">Baixa</option>
+                <option value="media" selected>Média</option>
+                <option value="alta">Alta</option>
+              </select>
+            </label>
+            <label class="field">
+              Vencimento
+              <input id="tasks-due" type="date">
+            </label>
+          </div>
+        </div>
+
+        <label class="field">
+          Observações
+          <textarea id="tasks-notes" rows="3" maxlength="2000" placeholder="Detalhes opcionais da tarefa"></textarea>
+        </label>
+
+        <div class="tasks-modal-section">
+          <p class="tasks-modal-section-label">Etiquetas</p>
+          <div class="tag-picker" id="tasks-tag-picker"></div>
+          <div class="tag-create-row">
+            <input id="tasks-new-tag" type="text" maxlength="40" placeholder="Nova etiqueta" autocomplete="off">
+            <button class="btn btn-sm" id="tasks-add-tag" type="button">Criar</button>
+          </div>
+        </div>
+
+        <div class="tasks-modal-section">
+          <p class="tasks-modal-section-label">Checklist</p>
+          <ul class="checklist-editor" id="tasks-checklist"></ul>
+          <div class="checklist-add">
+            <input id="tasks-check-input" type="text" maxlength="200" placeholder="Item do checklist" autocomplete="off">
+            <button class="btn btn-sm" id="tasks-check-add" type="button">Adicionar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tasks-modal-foot modal-actions">
+        <p class="modal-error" id="tasks-error" role="alert"></p>
+        <button class="btn btn-danger" id="tasks-delete" type="button" hidden>Excluir</button>
+        <span class="spacer"></span>
+        <button class="btn" id="tasks-cancel" type="button">Cancelar</button>
+        <button class="btn btn-primary" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="/src/entradas/tarefas.js"></script>
+</body>
+</html>

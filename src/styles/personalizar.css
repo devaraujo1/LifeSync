@@ -1,0 +1,72 @@
+.personalizar-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 760px;
+}
+
+.personalizar-page .page-header {
+  width: 100%;
+  text-align: center;
+}
+
+.personalizar-page .page-lead {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.prefs-grid {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+}
+
+.prefs-card {
+  padding: var(--pad-panel);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  backdrop-filter: blur(14px);
+}
+
+.prefs-card h2 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.prefs-card .field {
+  margin-bottom: 10px;
+}
+
+.prefs-card .field:last-child {
+  margin-bottom: 0;
+}
+
+.prefs-card .drawer-note {
+  margin: 6px 0 0;
+}
+
+.prefs-card .switch-group {
+  margin-top: 8px;
+}
+
+.prefs-card-foot {
+  display: flex;
+  justify-content: center;
+}
+
+.personalizar-page .profile-edit {
+  justify-content: center;
+}
+
+@media (min-width: 701px) {
+  .prefs-grid {
+    max-width: 640px;
+  }
+}

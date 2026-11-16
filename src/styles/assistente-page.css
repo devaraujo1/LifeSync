@@ -1,0 +1,547 @@
+/* Assistente full-bleed: histórico colado na sidebar do app, chat ocupa a tela */
+
+.app[data-page='assistente'] {
+  height: 100dvh;
+  overflow: hidden;
+  transition: padding-left 0.3s var(--ease);
+}
+
+/* Histórico acompanha a sidebar quando o menu abre (desktop) */
+@media (min-width: 700px) {
+  .app[data-page='assistente'].menu-open {
+    padding-left: var(--menu-width);
+  }
+}
+
+@media (max-width: 699.98px) {
+  .app[data-page='assistente'],
+  .app[data-page='assistente'].menu-open {
+    padding-left: 0;
+    padding-left: env(safe-area-inset-left, 0px);
+  }
+}
+
+.assistente-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Grid tela inteira: histórico | chat */
+.ai-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  transition: grid-template-columns 0.28s var(--ease);
+}
+
+/* Overlay / drawer: collapsed não esconde o rail (mobile-first base) */
+html.ai-rail-collapsed .ai-layout {
+  grid-template-columns: 1fr;
+}
+
+html.ai-rail-collapsed .ai-rail {
+  min-width: unset;
+  width: min(280px, calc(100vw - var(--rail) - 8px));
+  padding: 14px 12px 18px;
+  border-right-width: 1px;
+  opacity: 1;
+  overflow: auto;
+  pointer-events: auto;
+}
+
+/* Histórico: drawer overlay no mobile */
+.ai-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  height: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(300px, 88vw);
+  z-index: 55;
+  padding: 14px 12px 18px;
+  border-right: 1px solid var(--line);
+  background: var(--surface-strong);
+  backdrop-filter: blur(16px);
+  box-shadow: 12px 0 32px rgba(0, 0, 0, 0.35);
+  transform: translateX(-110%);
+  transition: transform 0.28s var(--ease-out-expo), left 0.3s var(--ease);
+}
+
+.app[data-page='assistente'].menu-open .ai-rail {
+  left: var(--menu-width);
+  width: min(300px, calc(100vw - var(--menu-width)));
+}
+
+html.ai-rail-open .ai-rail {
+  transform: translateX(0);
+}
+
+.ai-rail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ai-nova {
+  flex: 1;
+  justify-content: center;
+  gap: 8px;
+  height: var(--control-h);
+}
+
+.ai-rail-label {
+  margin: 6px 2px 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+.ai-rail-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ai-rail-empty {
+  margin: 10px 2px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ai-rail-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: stretch;
+  gap: 2px;
+  border-radius: calc(var(--radius) - 2px);
+}
+
+.ai-rail-item.is-active {
+  background: rgba(var(--cyan-rgb), 0.1);
+}
+
+.ai-rail-item-btn {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius) - 2px);
+  cursor: pointer;
+  color: var(--text);
+  min-width: 0;
+}
+
+.ai-rail-item-btn:hover {
+  background: var(--surface-hover);
+}
+
+.ai-rail-item-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-rail-item-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--faint);
+}
+
+.ai-rail-item-del {
+  width: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: 1;
+}
+
+.ai-rail-item:hover .ai-rail-item-del,
+.ai-rail-item.is-active .ai-rail-item-del {
+  opacity: 1;
+}
+
+.ai-rail-item-del:hover {
+  color: var(--coral);
+  background: rgba(244, 144, 156, 0.1);
+}
+
+.ai-rail-item-del .icon {
+  width: 15px;
+  height: 15px;
+}
+
+.ai-rail-toggle {
+  display: grid;
+  flex-shrink: 0;
+}
+
+.ai-rail-close {
+  display: grid;
+  flex-shrink: 0;
+}
+
+.ai-rail-backdrop {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.ai-rail-backdrop[hidden] {
+  display: none;
+}
+
+/* Chat: restante da tela */
+.ai-shell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+}
+
+.ai-chat-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+  padding: 10px 14px;
+  padding-top: max(10px, env(safe-area-inset-top, 0px));
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 699.98px) {
+  .ai-chat-top {
+    padding-left: max(64px, calc(56px + env(safe-area-inset-left, 0px)));
+  }
+}
+
+.ai-chat-top-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ai-chat-heading {
+  min-width: 0;
+}
+
+.ai-chat-heading .kicker {
+  margin: 0 0 2px;
+}
+
+.ai-chat-heading h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-status {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(var(--cyan-rgb), 0.28);
+  background: rgba(var(--cyan-rgb), 0.08);
+}
+
+.ai-status.is-off {
+  color: var(--coral);
+  border-color: rgba(244, 144, 156, 0.35);
+  background: rgba(244, 144, 156, 0.08);
+}
+
+.ai-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ai-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  scroll-behavior: smooth;
+}
+
+.ai-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: min(52vh, 420px);
+  padding: 24px 12px;
+}
+
+.ai-empty[hidden] {
+  display: none;
+}
+
+.ai-empty-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: calc(var(--radius) - 2px);
+  display: grid;
+  place-items: center;
+  background: rgba(var(--cyan-rgb), 0.1);
+  border: 1px solid rgba(var(--cyan-rgb), 0.22);
+  margin-bottom: 14px;
+}
+
+.ai-empty-mark img {
+  width: 22px;
+  height: 22px;
+}
+
+.ai-empty-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.ai-empty-lead {
+  margin: 8px 0 0;
+  max-width: 36ch;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ai-suggestions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--gap-panel);
+  width: 100%;
+  max-width: 560px;
+  margin-top: 20px;
+}
+
+.ai-suggestion {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font: 500 13px/1.35 var(--font-body);
+  cursor: pointer;
+  transition: border-color var(--dur-hover) var(--ease), background var(--dur-hover) var(--ease);
+}
+
+.ai-suggestion:hover {
+  border-color: rgba(var(--cyan-rgb), 0.4);
+  background: rgba(var(--cyan-rgb), 0.08);
+}
+
+.ai-msgs {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  width: min(760px, 100%);
+  margin: 0 auto;
+  padding-bottom: 8px;
+}
+
+.ai-msgs.is-visible {
+  display: flex;
+}
+
+.ai-msgs .assistente-bubble {
+  max-width: min(92%, 640px);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  border-radius: var(--radius);
+}
+
+.ai-msgs .assistente-msg-assistant .assistente-bubble {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+}
+
+.ai-msgs .is-thinking .assistente-bubble-thinking {
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.ai-status.is-busy {
+  color: var(--cyan);
+}
+
+.ai-msgs .is-error .assistente-bubble-error {
+  max-width: min(92%, 640px);
+}
+
+.ai-composer {
+  flex-shrink: 0;
+  padding: 10px 14px max(14px, env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--bg) 75%, transparent);
+}
+
+.ai-msgs .ai-previa {
+  max-width: min(100%, 420px);
+}
+
+.ai-composer-card {
+  width: min(760px, 100%);
+  margin: 0 auto;
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  backdrop-filter: blur(14px);
+  transition: border-color var(--dur-hover) var(--ease);
+}
+
+.ai-composer-card:focus-within {
+  border-color: rgba(var(--cyan-rgb), 0.45);
+  box-shadow: 0 0 0 3px rgba(var(--cyan-rgb), 0.08);
+}
+
+.ai-composer-input {
+  font-size: 14px;
+  min-height: 28px;
+  max-height: 160px;
+  padding: 4px 4px 8px;
+}
+
+@media (min-width: 701px) {
+  .ai-rail {
+    left: var(--rail);
+    width: min(280px, calc(100vw - var(--rail) - 8px));
+  }
+
+  .app[data-page='assistente'].menu-open .ai-rail {
+    left: var(--menu-width);
+    width: min(280px, calc(100vw - var(--menu-width) - 8px));
+  }
+
+  .ai-suggestions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ai-chat-top {
+    padding: 12px 20px;
+  }
+}
+
+@media (min-width: 961px) {
+  .ai-layout {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  }
+
+  html.ai-rail-collapsed .ai-layout {
+    grid-template-columns: 0 minmax(0, 1fr);
+  }
+
+  html.ai-rail-collapsed .ai-rail {
+    min-width: 0;
+    width: 0;
+    padding: 0;
+    border-right-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .ai-rail {
+    position: static;
+    top: auto;
+    left: auto;
+    bottom: auto;
+    width: auto;
+    z-index: auto;
+    padding: 14px 12px;
+    box-shadow: none;
+    transform: none;
+    transition: none;
+  }
+
+  .app[data-page='assistente'].menu-open .ai-rail {
+    left: auto;
+    width: auto;
+  }
+
+  html.ai-rail-open .ai-rail {
+    transform: none;
+  }
+
+  .ai-rail-backdrop {
+    display: none;
+  }
+
+  .ai-rail-item-del {
+    opacity: 0;
+  }
+
+  .ai-scroll {
+    padding: 20px 24px;
+  }
+
+  .ai-composer {
+    padding: 12px 20px 16px;
+  }
+
+  .ai-chat-top {
+    padding: 12px 20px;
+  }
+}

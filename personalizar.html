@@ -1,0 +1,42 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Personalizar — LifeSync Personal Life OS">
+  <meta name="theme-color" content="#050505">
+  <title>Personalizar | LifeSync</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@200;300;400;500;600;700&display=swap">
+  <script>
+    try {
+      var p = JSON.parse(localStorage.getItem('lifesync-preferencias')) || {}
+      var r = document.documentElement
+      if (p.destaque) r.dataset.accent = p.destaque
+      r.dataset.aurora = { animado: 'animada', estatico: 'estatica', desligado: 'desligada' }[p.fundo] || 'animada'
+      if (p.densidade) r.dataset.densidade = p.densidade
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="aurora aurora-soft" aria-hidden="true">
+    <span class="a1"></span><span class="a2"></span><span class="a3"></span>
+  </div>
+
+  <div class="app" data-page="personalizar">
+    <main class="page personalizar-page" id="personalizar-page">
+      <header class="page-header" data-enter>
+        <p class="kicker">LifeSync</p>
+        <h1>Personalizar</h1>
+        <p class="page-lead">Conta, aparência e o que aparece na sua página inicial.</p>
+      </header>
+
+      <div class="prefs-grid" id="personalizar-root" data-reveal></div>
+    </main>
+  </div>
+
+  <script type="module" src="/src/entradas/personalizar.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
-# DSHGM | Dashboard Pessoal — v1.0
+﻿# LifeSync — v1.0
 
-Dashboard pessoal minimalista (visual verde-petróleo/ciano) para usar como página inicial do navegador. Reúne relógio, clima, pesquisa do Google, tarefas, financeiro, agenda com **sincronização bidirecional com o Google Calendar**, favoritos, biblioteca de lazer e player do Spotify. Os dados ficam na **sua conta** (login com Google), e não mais só no navegador, então acompanham você em qualquer dispositivo.
+LifeSync — dashboard pessoal minimalista (visual verde-petróleo/ciano) para usar como página inicial do navegador. Reúne relógio, clima, pesquisa do Google, tarefas, financeiro, agenda com **sincronização bidirecional com o Google Calendar** e favoritos. Os dados ficam na **sua conta** (login com Google), e não mais só no navegador, então acompanham você em qualquer dispositivo.
 
 > Projeto pessoal, desenhado para **uma conta autorizada** (lista de e-mails permitidos). Não é um serviço multiusuário aberto.
 
@@ -10,11 +10,9 @@ Dashboard pessoal minimalista (visual verde-petróleo/ciano) para usar como pág
 |---|---|
 | **Início** | Saudação, data e relógio, clima, pesquisa do Google (abre em nova guia), atalhos, próximas tarefas e eventos, saldo do mês |
 | **Tarefas** | Únicas e recorrentes (dias da semana), conclusão por dia, progresso do dia |
-| **Financeiro** | Receitas, despesas e dinheiro guardado, filtros por mês/ano, gráfico por categoria, meta financeira, relatório em PDF |
+| **Financeiro** | Resumo, gráficos, lançamentos e cartões numa única página; filtros por mês/ano, meta e relatório em PDF |
 | **Agenda** | Calendário mensal, eventos com recorrência e exceções, categorias, painel de conexão com o Google Calendar |
 | **Favoritos** | Links por categoria, atalhos fixados na página inicial |
-| **Lazer** | Biblioteca de jogos, filmes e séries com status, progresso, capas e sorteio |
-| **Spotify** | Player (Web Playback SDK, requer Premium) com login PKCE |
 | **Perfil** | Cores, fundo, densidade, hora 24h, início da semana, cidade do clima, foto |
 
 Tarefas e eventos do calendário são **entidades independentes**: uma tarefa nunca vira evento.
@@ -24,14 +22,13 @@ Tarefas e eventos do calendário são **entidades independentes**: uma tarefa nu
 - **Back-end:** Node.js + Express, empacotado como função serverless do Netlify
 - **Banco:** PostgreSQL no [Neon](https://neon.tech) (driver HTTP, sem conexões persistentes), migrações SQL versionadas
 - **Autenticação:** Google OAuth 2.0 / OpenID Connect (fluxo de código no servidor, PKCE)
-- **Integrações:** Google Calendar API, Spotify Web API/Web Playback SDK, Open-Meteo (clima)
+- **Integrações:** Google Calendar API, Open-Meteo (clima)
 - **Testes:** Vitest + Supertest + PGlite (PostgreSQL real em memória)
 
 ## Como funciona (resumo)
 ```
 Navegador ──(cookie de sessão HttpOnly)──► /api/* (função Netlify, Express) ──► Neon (PostgreSQL)
                                                   └──► Google OAuth / Google Calendar
-Spotify: o navegador fala direto com o Spotify (PKCE); a conta Google não interfere.
 ```
 O servidor identifica o usuário só pela sessão (nunca por um `user_id` enviado pelo navegador), valida toda entrada e isola os dados por conta.
 
@@ -47,7 +44,7 @@ npm run migrate             # cria as tabelas no banco
 npm run dev:api             # terminal 1: API em http://127.0.0.1:3001
 npm run dev                 # terminal 2: site em http://127.0.0.1:5173
 ```
-Abra **http://127.0.0.1:5173** (não `localhost`): o OAuth e o Spotify usam esse endereço.
+Abra **http://127.0.0.1:5173** (não `localhost`): o OAuth usa esse endereço.
 
 
 ## Segurança
@@ -76,11 +73,18 @@ Abra **http://127.0.0.1:5173** (não `localhost`): o OAuth e o Spotify usam esse
 
 ## Estrutura do repositório
 ```
-src/               front-end (páginas, módulos, serviços e estilos)
-server/            API (rotas, serviços, repositórios, middlewares)
-netlify/functions/ api.js (Express serverless) e calendar-sync.js (agendador)
-db/migrations/     SQL versionado (somente aditivo)
-scripts/           migrate.js e gerar-chaves.js
-tests/             suíte automatizada
-docs/              API.md e DEPLOY.md
+*.html             páginas Vite (MPA)
+src/entradas/      boot de cada HTML (auth + CSS + import da página)
+src/pages/         lógica de tela
+src/modules/       widgets reutilizáveis (shell, agenda, clima…)
+src/services/      cliente HTTP / storage / guards
+src/styles/        CSS por área
+shared/            regras puras usadas por front e API (ex.: cartões)
+server/            API Express (routes → services → repositories)
+netlify/functions/ api.js + calendar-sync.js (cron)
+db/migrations/     SQL aditivo
+scripts/           migrate + gerar-chaves
+tests/             Vitest + PGlite
+docs/              API.md, DEPLOY.md
 ```
+Mapa de reconhecimento do workspace: `../mapa/`.

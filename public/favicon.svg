@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="LifeSync">
+  <rect width="64" height="64" rx="16" fill="#050505"/>
+  <!-- sync arc (silver) -->
+  <path d="M14 36c0-12 8.5-20 18-20" fill="none" stroke="#d8dce0" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="14.5" cy="36" r="2.4" fill="#f2f4f6"/>
+  <!-- sync arc (lime) -->
+  <path d="M50 28c0 12-8.5 20-18 20" fill="none" stroke="#A4EB3C" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- check -->
+  <path d="M22 33.5 L29.2 40.5 L44.5 22.5" fill="none" stroke="#A4EB3C" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="44.5" cy="22.5" r="2.6" fill="#A4EB3C"/>
+</svg>
