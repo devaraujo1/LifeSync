@@ -19,5 +19,11 @@ Thumbs.db
 *.log
 npm-debug.log*
 
+# Cursor / agentes de IA (local only)
+.cursor/
+.cursor-map/
+.agents/
+AGENTS.md
+
 # Zips de entrega
 *.zip
