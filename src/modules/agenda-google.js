@@ -1,4 +1,4 @@
-// Sincronização com Google Calendar não é instantânea (abertura da aba, alterações locais, servidor ~15 min).
+// Sincronização com Google Calendar não é instantânea (abertura da aba, alterações locais, servidor).
 import { calendarioApi, URL_CONECTAR, mudouAgenda } from '../services/calendarioApi.js'
 import { mostrarAviso } from './shell.js'
 
