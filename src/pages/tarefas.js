@@ -162,8 +162,10 @@ async function carregar() {
 
 function atualizarLocal(tarefa) {
   const i = tarefas.findIndex((x) => x.id === tarefa.id)
-  if (i >= 0) tarefas[i] = tarefa
-  return tarefa
+  if (i < 0) return tarefa
+  // Mantém a mesma referência — cards abertos continuam sincronizados.
+  Object.assign(tarefas[i], tarefa)
+  return tarefas[i]
 }
 
 async function mudarStatus(tarefa, status) {
@@ -173,10 +175,25 @@ async function mudarStatus(tarefa, status) {
   return atualizada
 }
 
-async function salvarChecklistTarefa(tarefa, checklist) {
-  const atualizada = await tarefasApi.salvarChecklist(tarefa.id, checklist)
-  atualizarLocal(atualizada)
-  return atualizada
+const checklistFila = new Map()
+
+async function salvarChecklistTarefa(tarefa, montarItens) {
+  const anterior = checklistFila.get(tarefa.id) || Promise.resolve()
+  const job = anterior
+    .catch(() => {})
+    .then(async () => {
+      const atual = tarefas.find((x) => x.id === tarefa.id) || tarefa
+      const itens = typeof montarItens === 'function' ? montarItens(atual.checklist ?? []) : montarItens
+      const atualizada = await tarefasApi.salvarChecklist(tarefa.id, itens)
+      return atualizarLocal(atualizada)
+    })
+  checklistFila.set(
+    tarefa.id,
+    job.finally(() => {
+      if (checklistFila.get(tarefa.id) === job) checklistFila.delete(tarefa.id)
+    })
+  )
+  return job
 }
 
 function cardMeta(t) {
@@ -251,19 +268,18 @@ function painelChecklist(t) {
     const alternar = async () => {
       if (li.dataset.busy === '1') return
       const feito = !cb.checked
-      const fonte = t.checklist ?? lista
-      const proximo = fonte.map((x, i) => ({
-        texto: x.texto,
-        feito: i === idx ? feito : !!x.feito
-      }))
       cb.checked = feito
       li.classList.toggle('is-done', feito)
       li.setAttribute('aria-checked', String(feito))
       li.dataset.busy = '1'
       try {
-        const atualizada = await salvarChecklistTarefa(t, proximo)
-        Object.assign(t, atualizada)
-        atualizarContadorChecklist(painel.closest('.task-card'), atualizada.checklist ?? proximo)
+        const atualizada = await salvarChecklistTarefa(t, (fonte) =>
+          fonte.map((x, i) => ({
+            texto: x.texto,
+            feito: i === idx ? feito : !!x.feito
+          }))
+        )
+        atualizarContadorChecklist(painel.closest('.task-card'), atualizada.checklist ?? [])
       } catch (erro) {
         cb.checked = !feito
         li.classList.toggle('is-done', !feito)
@@ -305,6 +321,7 @@ function fazerCard(t, { kanban = false } = {}) {
   const checklist = t.checklist ?? []
   const temChecklist = checklist.length > 0
   const feitos = checklist.filter((i) => i.feito).length
+  if (!temChecklist) checklistAberto.delete(t.id)
 
   card.className = 'task-card'
   card.dataset.id = t.id
@@ -408,6 +425,10 @@ function fazerCard(t, { kanban = false } = {}) {
 
   card.addEventListener('click', (e) => {
     if (card.classList.contains('is-dragging')) return
+    if (card.dataset.suppressClick === '1') {
+      delete card.dataset.suppressClick
+      return
+    }
     if (e.target.closest('button, input, label, a, .task-checklist')) return
     abrirOuChecklist()
   })
@@ -446,6 +467,7 @@ function ativarArrasteKanban(card, tarefa) {
       if (!iniciou) {
         if (Math.hypot(dx, dy) < 8) return
         iniciou = true
+        card.dataset.suppressClick = '1'
         iniciarDrag(card, tarefa, ev)
       }
       if (dragState) moverDrag(ev)
@@ -472,10 +494,12 @@ function iniciarDrag(card, tarefa, ev) {
   ghost.style.width = `${rect.width}px`
   ghost.style.left = `${rect.left}px`
   ghost.style.top = `${rect.top}px`
+  ghost.style.pointerEvents = 'none'
   ghost.setAttribute('aria-hidden', 'true')
   document.body.append(ghost)
 
   card.classList.add('is-dragging')
+  card.style.touchAction = 'none'
   document.body.classList.add('is-kanban-dragging')
   dragState = {
     card,
@@ -520,6 +544,12 @@ async function finalizarDrag(ev) {
   const novoStatus = col?.dataset?.status
   state.ghost.remove()
   state.card.classList.remove('is-dragging')
+  state.card.style.touchAction = ''
+  state.card.dataset.suppressClick = '1'
+  const cardRef = state.card
+  setTimeout(() => {
+    if (cardRef.dataset.suppressClick === '1') delete cardRef.dataset.suppressClick
+  }, 400)
   document.body.classList.remove('is-kanban-dragging')
   document.querySelectorAll('.kanban-col.is-drop-target').forEach((c) => c.classList.remove('is-drop-target'))
 

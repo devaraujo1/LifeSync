@@ -58,8 +58,12 @@ const escapar = (texto) =>
   [...texto]
     .map((c) => {
       const n = codigo(c)
-      if (c === '\\' || c === '(' || c === ')') return `\\${c}`
-      return n < 127 ? c : `\\${n.toString(8).padStart(3, '0')}`
+      // Usa o byte WinAnsi (n), não o caractere Unicode original — senão "−" e afins
+      // entram quebrados no stream (ex.: sinal de despesa virando lixo no PDF).
+      const out = n < 128 ? String.fromCharCode(n) : null
+      if (out === '\\' || out === '(' || out === ')') return `\\${out}`
+      if (out) return out
+      return `\\${n.toString(8).padStart(3, '0')}`
     })
     .join('')
 

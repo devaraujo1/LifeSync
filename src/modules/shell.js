@@ -49,19 +49,12 @@ function templateSidebar() {
   return `
     <aside class="sidebar" id="sidebar" aria-label="Menu LifeSync">
       <div class="sidebar-head">
-        <button class="icon-btn" id="sidebar-toggle" type="button"
-          aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menu">
-          ${icon('menu')}
-        </button>
-        <a class="sidebar-brand-rail" href="index.html" title="LifeSync" aria-label="LifeSync">
-          <img class="brand-mark" src="/brand/lifesync-mark.svg" alt="" width="26" height="26" />
-        </a>
-        <a class="brand-lockup" href="index.html" aria-label="LifeSync">
+        <a class="brand-lockup" href="index.html" title="LifeSync" aria-label="LifeSync">
           <img class="brand-mark" src="/brand/lifesync-mark.svg" alt="" width="28" height="28" />
           <span class="brand-wordmark"><span class="brand-life">Life</span><span class="brand-sync">Sync</span></span>
         </a>
         <button class="icon-btn sidebar-chevron" id="sidebar-chevron" type="button"
-          aria-controls="sidebar" aria-label="Expandir ou recolher menu">
+          aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menu">
           ${icon('chevron-right')}
         </button>
       </div>
@@ -110,7 +103,6 @@ export function iniciarShell({ pagina }) {
   app.insertAdjacentHTML('afterbegin', templateSidebar())
   app.insertAdjacentHTML('beforeend', templateExtras())
 
-  const toggle = app.querySelector('#sidebar-toggle')
   const chevron = app.querySelector('#sidebar-chevron')
   const menuFab = app.querySelector('#menu-fab')
   const backdrop = app.querySelector('#sidebar-backdrop')
@@ -122,7 +114,7 @@ export function iniciarShell({ pagina }) {
   function definirMenu(aberto, { persistir = true } = {}) {
     app.classList.toggle('menu-open', aberto)
     const label = aberto ? 'Recolher menu' : 'Abrir menu'
-    for (const btn of [toggle, menuFab]) {
+    for (const btn of [chevron, menuFab]) {
       if (!btn) continue
       btn.setAttribute('aria-expanded', String(aberto))
       btn.setAttribute('aria-label', label)
@@ -134,8 +126,7 @@ export function iniciarShell({ pagina }) {
 
   let referenciaRolagem = window.scrollY
   const alternar = () => definirMenu(!app.classList.contains('menu-open'))
-  toggle.addEventListener('click', alternar)
-  chevron.addEventListener('click', alternar)
+  chevron?.addEventListener('click', alternar)
   menuFab?.addEventListener('click', alternar)
   backdrop?.addEventListener('click', () => definirMenu(false))
 

@@ -344,29 +344,36 @@ select:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 18px 0 14px;
+  gap: 2px;
+  flex-shrink: 0;
+  padding: 14px 0 8px;
 }
 
 .menu-open .sidebar-head {
   flex-direction: row;
+  align-items: center;
   justify-content: space-between;
-  padding: 18px 12px 14px 10px;
+  gap: 8px;
+  padding: 14px 10px 10px;
 }
 
+/* Logo sempre no mesmo lugar (topo); no rail só o mark, aberto mostra o nome */
 .brand-lockup {
-  display: none;
+  display: flex;
   align-items: center;
-  gap: 10px;
-  margin-right: auto;
-  margin-left: 4px;
+  justify-content: center;
+  gap: 0;
   min-width: 0;
+  height: 40px;
   text-decoration: none;
   color: inherit;
 }
 
 .menu-open .brand-lockup {
-  display: flex;
+  flex: 1;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-left: 2px;
 }
 
 .brand-mark {
@@ -376,13 +383,18 @@ select:focus-visible {
 }
 
 .brand-wordmark {
-  display: flex;
+  display: none;
   align-items: baseline;
   font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1;
+  white-space: nowrap;
+}
+
+.menu-open .brand-wordmark {
+  display: flex;
 }
 
 .brand-life {
@@ -391,22 +403,6 @@ select:focus-visible {
 
 .brand-sync {
   color: var(--cyan);
-}
-
-.sidebar-brand-rail {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  place-items: center;
-}
-
-.menu-open .sidebar-brand-rail {
-  display: none;
-}
-
-.sidebar-brand-rail .brand-mark {
-  width: 26px;
-  height: 26px;
 }
 
 .icon-btn {
@@ -424,6 +420,10 @@ select:focus-visible {
 .icon-btn:hover {
   color: var(--text);
   background: var(--surface-hover);
+}
+
+.sidebar-chevron {
+  flex-shrink: 0;
 }
 
 .sidebar-chevron .icon {
@@ -460,9 +460,10 @@ select:focus-visible {
 
 .sidebar-nav {
   display: grid;
-  gap: 4px;
-  flex: 1;
-  padding: var(--nav-pad);
+  align-content: start;
+  gap: 2px;
+  flex: 0 1 auto;
+  padding: 4px var(--nav-pad) 8px;
   overflow-y: auto;
   min-height: 0;
 }
@@ -471,6 +472,7 @@ select:focus-visible {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   height: var(--control-h);
   padding: 0 11px;
   color: var(--muted);
@@ -478,6 +480,10 @@ select:focus-visible {
   border-radius: calc(var(--radius) - 2px);
   font-size: 13px;
   transition: color 0.2s, background 0.2s;
+}
+
+.menu-open .nav-item {
+  justify-content: flex-start;
 }
 
 .nav-item:hover {
@@ -517,9 +523,9 @@ select:focus-visible {
 
 .sidebar-foot {
   display: grid;
-  gap: 4px;
+  gap: 2px;
   margin-top: auto;
-  padding: 10px;
+  padding: 8px var(--nav-pad) 10px;
   border-top: 1px solid var(--line);
   flex-shrink: 0;
 }
@@ -595,16 +601,25 @@ select:focus-visible {
   /* Drawer sempre expandido visualmente no mobile */
   .sidebar .sidebar-head {
     flex-direction: row;
+    align-items: center;
     justify-content: space-between;
-    padding: 18px 12px 14px 10px;
+    gap: 8px;
+    padding: 14px 10px 10px;
   }
 
   .sidebar .brand-lockup {
+    flex: 1;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-left: 2px;
+  }
+
+  .sidebar .brand-wordmark {
     display: flex;
   }
 
-  .sidebar .sidebar-brand-rail {
-    display: none;
+  .sidebar .nav-item {
+    justify-content: flex-start;
   }
 
   .sidebar .nav-label {

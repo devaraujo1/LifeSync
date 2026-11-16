@@ -31,15 +31,15 @@ const ICONES = {
 }
 
 const CORES = {
-  Moradia: '#5eead4',
-  Alimentação: '#67e8f9',
-  Transporte: '#34d399',
-  Lazer: '#2a93ad',
-  Outros: '#587676'
+  Moradia: '#A4EB3C',
+  Alimentação: '#f4909c',
+  Transporte: '#c8f578',
+  Lazer: '#8fd94a',
+  Outros: '#9aa3ab'
 }
 
 // Categorias criadas pelo usuário ganham uma cor da paleta, sempre a mesma para o mesmo nome.
-const PALETA_EXTRA = ['#a7f3d0', '#7dd3fc', '#fcd34d', '#c4b5fd', '#f9a8d4', '#fdba74', '#86efac', '#93c5fd']
+const PALETA_EXTRA = ['#c8f578', '#f4909c', '#A4EB3C', '#8fd94a', '#6fa82a', '#fcd34d', '#93c5fd', '#fdba74']
 
 function corDaCategoria(nome) {
   if (CORES[nome]) return CORES[nome]
@@ -510,7 +510,7 @@ function renderGoal() {
   ring.innerHTML =
     `<svg viewBox="0 0 120 120" role="img" aria-label="Progresso da meta financeira">` +
     `<defs><linearGradient id="g-goal" x1="0" y1="0" x2="1" y2="1">` +
-    `<stop offset="0" stop-color="#5eead4"/><stop offset="1" stop-color="#34d399"/></linearGradient></defs>` +
+    `<stop offset="0" stop-color="#A4EB3C"/><stop offset="1" stop-color="#8fd94a"/></linearGradient></defs>` +
     `<circle cx="60" cy="60" r="${R}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="12"/>` +
     (ratio > 0
       ? `<circle cx="60" cy="60" r="${R}" fill="none" stroke="url(#g-goal)" stroke-width="12" ` +
@@ -742,18 +742,21 @@ function renderTransactions(list) {
 }
 
 const exportButton = document.querySelector('#export-pdf')
-const FILTER_LABELS = { all: 'Todas', income: 'Receitas', expense: 'Despesas', saving: 'Guardado' }
+const FILTER_LABELS = { all: 'Todas', income: 'Entradas', expense: 'Despesas', saving: 'Guardado' }
 
 function updateExportButton(list) {
-  const empty = getVisible(list).length === 0
+  // Exporta o período inteiro (resumo + categorias); a tabela respeita o filtro ativo.
+  const empty = list.length === 0
   exportButton.disabled = empty
-  exportButton.title = empty ? 'Não há movimentações para exportar neste período' : 'Exportar relatório em PDF'
+  exportButton.title = empty
+    ? 'Não há movimentações para exportar neste período'
+    : 'Exportar relatório detalhado em PDF'
 }
 
 exportButton.addEventListener('click', () => {
   const periodList = transactions.filter(inPeriod)
+  if (periodList.length === 0) return
   const shown = getVisible(periodList)
-  if (shown.length === 0) return
 
   try {
     const blob = gerarRelatorioFinanceiro({
@@ -761,7 +764,8 @@ exportButton.addEventListener('click', () => {
       exibidas: shown,
       rotuloPeriodo: periodLabel(),
       rotuloFiltro: FILTER_LABELS[activeFilter],
-      totalGuardado: totalSaved()
+      totalGuardado: totalSaved(),
+      meta: goal
     })
     baixarArquivo(blob, nomeArquivoFinanceiro(period.year, period.month))
     mostrarAviso('PDF gerado')
