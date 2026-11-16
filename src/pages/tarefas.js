@@ -28,6 +28,7 @@ const botaoExcluir = document.querySelector('#tasks-delete')
 const refDay = document.querySelector('#tasks-ref-day')
 const filtroPrio = document.querySelector('#tasks-filter-priority')
 const filtroTag = document.querySelector('#tasks-filter-tag')
+const filtrosEl = document.querySelector('#tasks-filters')
 
 const menuFiltroPrio = criarSeletorCategoria({
   select: filtroPrio,
@@ -50,6 +51,7 @@ let editando = null
 let tipoAtual = 'unica'
 let checklistDraft = []
 let tagsSelecionadas = new Set()
+const checklistAberto = new Set()
 
 function hojeChave(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -158,6 +160,25 @@ async function carregar() {
   }
 }
 
+function atualizarLocal(tarefa) {
+  const i = tarefas.findIndex((x) => x.id === tarefa.id)
+  if (i >= 0) tarefas[i] = tarefa
+  return tarefa
+}
+
+async function mudarStatus(tarefa, status) {
+  const atualizada = await tarefasApi.definirStatus(tarefa.id, diaRef(), status)
+  atualizarLocal(atualizada)
+  render()
+  return atualizada
+}
+
+async function salvarChecklistTarefa(tarefa, checklist) {
+  const atualizada = await tarefasApi.salvarChecklist(tarefa.id, checklist)
+  atualizarLocal(atualizada)
+  return atualizada
+}
+
 function cardMeta(t) {
   const meta = document.createElement('div')
   meta.className = 'task-card-meta'
@@ -184,26 +205,82 @@ function cardMeta(t) {
     chip.textContent = tag.nome
     meta.append(chip)
   }
-  const feitos = (t.checklist ?? []).filter((i) => i.feito).length
-  const total = (t.checklist ?? []).length
-  if (total) {
-    const c = document.createElement('span')
-    c.className = 'meta-chip'
-    c.innerHTML = `${icon('check')} ${feitos}/${total}`
-    meta.append(c)
-  }
   return meta
 }
 
-function fazerCard(t) {
+function painelChecklist(t) {
+  const lista = t.checklist ?? []
+  const painel = document.createElement('div')
+  painel.className = 'task-checklist'
+  painel.hidden = !checklistAberto.has(t.id)
+
+  if (!lista.length) {
+    const vazio = document.createElement('p')
+    vazio.className = 'task-checklist-empty'
+    vazio.textContent = 'Sem itens. Edite a tarefa para adicionar.'
+    painel.append(vazio)
+    return painel
+  }
+
+  const ul = document.createElement('ul')
+  ul.className = 'task-checklist-list'
+  lista.forEach((item, idx) => {
+    const li = document.createElement('li')
+    li.classList.toggle('is-done', !!item.feito)
+    const cb = document.createElement('input')
+    cb.type = 'checkbox'
+    cb.checked = !!item.feito
+    cb.setAttribute('aria-label', item.texto)
+    cb.addEventListener('click', (e) => e.stopPropagation())
+    cb.addEventListener('change', async () => {
+      const proximo = lista.map((x, i) => (i === idx ? { texto: x.texto, feito: cb.checked } : { texto: x.texto, feito: !!x.feito }))
+      try {
+        const atualizada = await salvarChecklistTarefa(t, proximo)
+        Object.assign(t, atualizada)
+        li.classList.toggle('is-done', cb.checked)
+        const toggle = painel.closest('.task-card')?.querySelector('.task-check-toggle')
+        if (toggle) {
+          const feitos = proximo.filter((i) => i.feito).length
+          toggle.querySelector('.task-check-count').textContent = `${feitos}/${proximo.length}`
+        }
+      } catch (erro) {
+        cb.checked = !cb.checked
+        mostrarAviso(msg(erro))
+      }
+    })
+    const span = document.createElement('span')
+    span.textContent = item.texto
+    li.append(cb, span)
+    ul.append(li)
+  })
+  painel.append(ul)
+  return painel
+}
+
+function definirChecklistAberto(id, aberto) {
+  if (aberto) checklistAberto.add(id)
+  else checklistAberto.delete(id)
+}
+
+function fazerCard(t, { kanban = false } = {}) {
   const card = document.createElement('article')
   const status = statusDoDia(t, diaRef())
+  const checklist = t.checklist ?? []
+  const temChecklist = checklist.length > 0
+  const feitos = checklist.filter((i) => i.feito).length
+
   card.className = 'task-card'
+  card.dataset.id = t.id
   card.dataset.prio = t.prioridade || 'media'
   card.dataset.status = status
   card.tabIndex = 0
   card.setAttribute('role', 'button')
-  card.setAttribute('aria-label', `${t.texto}. ${ROTULO_STATUS[status]}. Abrir para editar`)
+  card.setAttribute(
+    'aria-label',
+    temChecklist
+      ? `${t.texto}. ${ROTULO_STATUS[status]}. Clique para abrir o checklist`
+      : `${t.texto}. ${ROTULO_STATUS[status]}. Abrir para editar`
+  )
 
   const top = document.createElement('div')
   top.className = 'task-card-top'
@@ -212,12 +289,40 @@ function fazerCard(t) {
   titulo.textContent = t.texto
   top.append(titulo)
 
+  if (kanban) {
+    const grip = document.createElement('span')
+    grip.className = 'task-drag-hint'
+    grip.title = 'Arraste para outra coluna'
+    grip.innerHTML = icon('dots')
+    top.prepend(grip)
+  }
+
   const foot = document.createElement('div')
   foot.className = 'task-card-foot'
   foot.append(cardMeta(t))
 
   const actions = document.createElement('div')
   actions.className = 'task-card-actions'
+
+  if (temChecklist || checklistAberto.has(t.id)) {
+    const toggle = document.createElement('button')
+    toggle.type = 'button'
+    toggle.className = 'task-check-toggle'
+    toggle.setAttribute('aria-expanded', String(checklistAberto.has(t.id)))
+    toggle.setAttribute('aria-label', 'Abrir ou fechar checklist')
+    toggle.innerHTML = `${icon('chevron-down')}<span class="task-check-count">${feitos}/${checklist.length || 0}</span>`
+    toggle.classList.toggle('is-open', checklistAberto.has(t.id))
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const aberto = !checklistAberto.has(t.id)
+      definirChecklistAberto(t.id, aberto)
+      const painel = card.querySelector('.task-checklist')
+      if (painel) painel.hidden = !aberto
+      toggle.setAttribute('aria-expanded', String(aberto))
+      toggle.classList.toggle('is-open', aberto)
+    })
+    actions.append(toggle)
+  }
 
   const st = document.createElement('button')
   st.type = 'button'
@@ -228,10 +333,7 @@ function fazerCard(t) {
   st.addEventListener('click', async (e) => {
     e.stopPropagation()
     try {
-      const atualizada = await tarefasApi.definirStatus(t.id, diaRef(), PROXIMO[status])
-      const i = tarefas.findIndex((x) => x.id === t.id)
-      if (i >= 0) tarefas[i] = atualizada
-      render()
+      await mudarStatus(t, PROXIMO[status])
     } catch (erro) {
       mostrarAviso(msg(erro))
     }
@@ -249,15 +351,145 @@ function fazerCard(t) {
 
   actions.append(st, edit)
   foot.append(actions)
-  card.append(top, foot)
-  card.addEventListener('click', () => abrirDialogo(t))
+
+  const painel = painelChecklist(t)
+  card.append(top, foot, painel)
+
+  const abrirOuChecklist = () => {
+    if (temChecklist) {
+      const aberto = !checklistAberto.has(t.id)
+      definirChecklistAberto(t.id, aberto)
+      painel.hidden = !aberto
+      const toggle = card.querySelector('.task-check-toggle')
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', String(aberto))
+        toggle.classList.toggle('is-open', aberto)
+      }
+      return
+    }
+    abrirDialogo(t)
+  }
+
+  card.addEventListener('click', (e) => {
+    if (card.classList.contains('is-dragging')) return
+    if (e.target.closest('button, input, label, a')) return
+    abrirOuChecklist()
+  })
   card.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
-      abrirDialogo(t)
+      abrirOuChecklist()
     }
   })
+
+  if (kanban) ativarArrasteKanban(card, t)
+
   return card
+}
+
+/* ---------- Kanban drag & drop (pointer: mouse + touch) ---------- */
+
+let dragState = null
+
+function ativarArrasteKanban(card, tarefa) {
+  card.classList.add('is-draggable')
+  card.addEventListener('pointerdown', (e) => {
+    if (e.button != null && e.button !== 0) return
+    if (e.target.closest('button, input, label, a, .task-checklist')) return
+
+    const origemX = e.clientX
+    const origemY = e.clientY
+    let iniciou = false
+    const pointerId = e.pointerId
+
+    const onMove = (ev) => {
+      if (ev.pointerId !== pointerId) return
+      const dx = ev.clientX - origemX
+      const dy = ev.clientY - origemY
+      if (!iniciou) {
+        if (Math.hypot(dx, dy) < 8) return
+        iniciou = true
+        iniciarDrag(card, tarefa, ev)
+      }
+      if (dragState) moverDrag(ev)
+    }
+
+    const onUp = (ev) => {
+      if (ev.pointerId !== pointerId) return
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      if (iniciou) finalizarDrag(ev)
+    }
+
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  })
+}
+
+function iniciarDrag(card, tarefa, ev) {
+  const rect = card.getBoundingClientRect()
+  const ghost = card.cloneNode(true)
+  ghost.classList.add('task-card-ghost')
+  ghost.style.width = `${rect.width}px`
+  ghost.style.left = `${rect.left}px`
+  ghost.style.top = `${rect.top}px`
+  ghost.setAttribute('aria-hidden', 'true')
+  document.body.append(ghost)
+
+  card.classList.add('is-dragging')
+  document.body.classList.add('is-kanban-dragging')
+  dragState = {
+    card,
+    tarefa,
+    ghost,
+    offsetX: ev.clientX - rect.left,
+    offsetY: ev.clientY - rect.top,
+    statusOrigem: statusDoDia(tarefa, diaRef())
+  }
+  destacarColuna(ev.clientX, ev.clientY)
+}
+
+function moverDrag(ev) {
+  if (!dragState) return
+  const { ghost, offsetX, offsetY } = dragState
+  ghost.style.left = `${ev.clientX - offsetX}px`
+  ghost.style.top = `${ev.clientY - offsetY}px`
+  destacarColuna(ev.clientX, ev.clientY)
+}
+
+function colunaSob(x, y) {
+  const el = document.elementFromPoint(x, y)
+  return el?.closest?.('.kanban-col') || null
+}
+
+function destacarColuna(x, y) {
+  document.querySelectorAll('.kanban-col.is-drop-target').forEach((c) => c.classList.remove('is-drop-target'))
+  const col = colunaSob(x, y)
+  if (col) col.classList.add('is-drop-target')
+}
+
+async function finalizarDrag(ev) {
+  const state = dragState
+  dragState = null
+  if (!state) return
+
+  const col = colunaSob(ev.clientX, ev.clientY)
+  const novoStatus = col?.dataset?.status
+  state.ghost.remove()
+  state.card.classList.remove('is-dragging')
+  document.body.classList.remove('is-kanban-dragging')
+  document.querySelectorAll('.kanban-col.is-drop-target').forEach((c) => c.classList.remove('is-drop-target'))
+
+  if (!novoStatus || novoStatus === state.statusOrigem) return
+  try {
+    await mudarStatus(state.tarefa, novoStatus)
+    mostrarAviso(`Status: ${ROTULO_STATUS[novoStatus]}`)
+  } catch (erro) {
+    mostrarAviso(msg(erro))
+    render()
+  }
 }
 
 function renderVazio(mensagem) {
@@ -281,7 +513,7 @@ function renderLista(lista) {
   }
   const wrap = document.createElement('div')
   wrap.className = 'tasks-list'
-  wrap.append(...lista.map(fazerCard))
+  wrap.append(...lista.map((t) => fazerCard(t)))
   board.replaceChildren(wrap)
 }
 
@@ -298,6 +530,7 @@ function renderKanban(lista) {
   for (const k of ['pendente', 'andamento', 'concluida']) {
     const el = document.createElement('div')
     el.className = 'kanban-col'
+    el.dataset.status = k
     const h = document.createElement('h3')
     const count = document.createElement('span')
     count.className = 'kanban-count'
@@ -307,10 +540,10 @@ function renderKanban(lista) {
     if (!buckets[k].length) {
       const vazio = document.createElement('p')
       vazio.className = 'kanban-empty'
-      vazio.textContent = 'Nenhuma tarefa'
+      vazio.textContent = 'Solte aqui'
       el.append(vazio)
     } else {
-      el.append(...buckets[k].map(fazerCard))
+      el.append(...buckets[k].map((t) => fazerCard(t, { kanban: true })))
     }
     grid.append(el)
   }
@@ -387,6 +620,16 @@ async function salvar(e) {
   }
 }
 
+// Evita o menu de filtro abrir pra cima / ficar cortado
+function corrigirMenusFiltro() {
+  const observer = new MutationObserver(() => {
+    const aberto = filtrosEl.querySelector('.cat-select.is-open')
+    filtrosEl.classList.toggle('has-menu-open', Boolean(aberto))
+    if (aberto) aberto.classList.remove('opens-up')
+  })
+  observer.observe(filtrosEl, { subtree: true, attributes: true, attributeFilter: ['class'] })
+}
+
 // Eventos UI
 document.querySelectorAll('[data-vista]').forEach((b) => {
   b.addEventListener('click', () => {
@@ -449,6 +692,7 @@ document.querySelector('#tasks-check-add').addEventListener('click', () => {
 })
 
 montarDias()
+corrigirMenusFiltro()
 refDay.value = hojeChave()
 definirTipo('unica')
 carregar().catch((erro) => {
