@@ -208,11 +208,19 @@ function cardMeta(t) {
   return meta
 }
 
+function atualizarContadorChecklist(card, checklist) {
+  const toggle = card?.querySelector('.task-check-toggle .task-check-count')
+  if (!toggle) return
+  const feitos = checklist.filter((i) => i.feito).length
+  toggle.textContent = `${feitos}/${checklist.length}`
+}
+
 function painelChecklist(t) {
   const lista = t.checklist ?? []
   const painel = document.createElement('div')
   painel.className = 'task-checklist'
   painel.hidden = !checklistAberto.has(t.id)
+  painel.addEventListener('click', (e) => e.stopPropagation())
 
   if (!lista.length) {
     const vazio = document.createElement('p')
@@ -227,29 +235,58 @@ function painelChecklist(t) {
   lista.forEach((item, idx) => {
     const li = document.createElement('li')
     li.classList.toggle('is-done', !!item.feito)
+    li.tabIndex = 0
+    li.setAttribute('role', 'checkbox')
+    li.setAttribute('aria-checked', String(!!item.feito))
+
     const cb = document.createElement('input')
     cb.type = 'checkbox'
     cb.checked = !!item.feito
-    cb.setAttribute('aria-label', item.texto)
-    cb.addEventListener('click', (e) => e.stopPropagation())
-    cb.addEventListener('change', async () => {
-      const proximo = lista.map((x, i) => (i === idx ? { texto: x.texto, feito: cb.checked } : { texto: x.texto, feito: !!x.feito }))
+    cb.tabIndex = -1
+    cb.setAttribute('aria-hidden', 'true')
+
+    const span = document.createElement('span')
+    span.textContent = item.texto
+
+    const alternar = async () => {
+      if (li.dataset.busy === '1') return
+      const feito = !cb.checked
+      const fonte = t.checklist ?? lista
+      const proximo = fonte.map((x, i) => ({
+        texto: x.texto,
+        feito: i === idx ? feito : !!x.feito
+      }))
+      cb.checked = feito
+      li.classList.toggle('is-done', feito)
+      li.setAttribute('aria-checked', String(feito))
+      li.dataset.busy = '1'
       try {
         const atualizada = await salvarChecklistTarefa(t, proximo)
         Object.assign(t, atualizada)
-        li.classList.toggle('is-done', cb.checked)
-        const toggle = painel.closest('.task-card')?.querySelector('.task-check-toggle')
-        if (toggle) {
-          const feitos = proximo.filter((i) => i.feito).length
-          toggle.querySelector('.task-check-count').textContent = `${feitos}/${proximo.length}`
-        }
+        atualizarContadorChecklist(painel.closest('.task-card'), atualizada.checklist ?? proximo)
       } catch (erro) {
-        cb.checked = !cb.checked
+        cb.checked = !feito
+        li.classList.toggle('is-done', !feito)
+        li.setAttribute('aria-checked', String(!feito))
         mostrarAviso(msg(erro))
+      } finally {
+        li.dataset.busy = '0'
+      }
+    }
+
+    li.addEventListener('click', (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      alternar()
+    })
+    li.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        e.stopPropagation()
+        alternar()
       }
     })
-    const span = document.createElement('span')
-    span.textContent = item.texto
+
     li.append(cb, span)
     ul.append(li)
   })
@@ -271,14 +308,13 @@ function fazerCard(t, { kanban = false } = {}) {
 
   card.className = 'task-card'
   card.dataset.id = t.id
-  card.dataset.prio = t.prioridade || 'media'
   card.dataset.status = status
   card.tabIndex = 0
   card.setAttribute('role', 'button')
   card.setAttribute(
     'aria-label',
     temChecklist
-      ? `${t.texto}. ${ROTULO_STATUS[status]}. Clique para abrir o checklist`
+      ? `${t.texto}. ${ROTULO_STATUS[status]}. Clique para abrir ou fechar o checklist`
       : `${t.texto}. ${ROTULO_STATUS[status]}. Abrir para editar`
   )
 
@@ -372,10 +408,11 @@ function fazerCard(t, { kanban = false } = {}) {
 
   card.addEventListener('click', (e) => {
     if (card.classList.contains('is-dragging')) return
-    if (e.target.closest('button, input, label, a')) return
+    if (e.target.closest('button, input, label, a, .task-checklist')) return
     abrirOuChecklist()
   })
   card.addEventListener('keydown', (e) => {
+    if (e.target !== card) return
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
       abrirOuChecklist()
@@ -466,7 +503,10 @@ function colunaSob(x, y) {
 
 function destacarColuna(x, y) {
   document.querySelectorAll('.kanban-col.is-drop-target').forEach((c) => c.classList.remove('is-drop-target'))
+  const ghost = dragState?.ghost
+  if (ghost) ghost.style.visibility = 'hidden'
   const col = colunaSob(x, y)
+  if (ghost) ghost.style.visibility = ''
   if (col) col.classList.add('is-drop-target')
 }
 
@@ -475,6 +515,7 @@ async function finalizarDrag(ev) {
   dragState = null
   if (!state) return
 
+  state.ghost.style.visibility = 'hidden'
   const col = colunaSob(ev.clientX, ev.clientY)
   const novoStatus = col?.dataset?.status
   state.ghost.remove()

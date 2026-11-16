@@ -172,10 +172,11 @@ export function criarSeletorCategoria({
     gatilho.setAttribute('aria-expanded', 'true')
     raiz.classList.add('is-open')
 
-    // Abre para cima quando não há espaço embaixo.
+    // Abre para cima só quando claramente não cabe embaixo (evita “desce e sobe”).
     const caixa = gatilho.getBoundingClientRect()
     const espacoAbaixo = window.innerHeight - caixa.bottom
-    raiz.classList.toggle('opens-up', espacoAbaixo < 320 && caixa.top > espacoAbaixo)
+    const alturaMenu = Math.min(320, 56 + select.options.length * 42)
+    raiz.classList.toggle('opens-up', espacoAbaixo < alturaMenu + 12 && caixa.top > espacoAbaixo + 24)
 
     const indiceAtual = [...select.options].findIndex((o) => o.value === select.value)
     destacar(indiceAtual >= 0 ? indiceAtual : 0)

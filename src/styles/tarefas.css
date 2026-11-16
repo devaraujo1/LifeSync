@@ -72,7 +72,7 @@
 .tasks-filters {
   position: sticky;
   top: 84px;
-  z-index: 3;
+  z-index: 5;
   display: flex;
   flex-wrap: nowrap;
   gap: 8px;
@@ -80,9 +80,15 @@
   margin: 0 -4px 16px;
   padding: 4px 4px 10px;
   overflow-x: auto;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   background: linear-gradient(180deg, color-mix(in srgb, var(--bg, #050505) 92%, transparent), transparent);
+}
+
+.tasks-filters.has-menu-open {
+  overflow: visible;
+  z-index: 40;
 }
 
 .tasks-filters::-webkit-scrollbar {
@@ -97,10 +103,28 @@
 .tasks-filters .cat-select {
   flex: 0 0 auto;
   min-width: 132px;
+}
+
+.tasks-filters .cat-select {
+  height: auto;
+  align-self: center;
+}
+
+.tasks-filters .cat-select .cat-trigger {
+  min-height: 40px;
   height: 40px;
 }
 
+.tasks-filters .cat-select.is-open {
+  z-index: 50;
+}
+
+.tasks-filters .cat-select.is-open .cat-menu {
+  z-index: 50;
+}
+
 .tasks-filters .select {
+  height: 40px;
   padding-top: 0;
   padding-bottom: 0;
 }
@@ -169,16 +193,17 @@
   background: var(--line-strong);
 }
 
-.task-card[data-prio='alta']::before {
-  background: var(--coral);
+/* Faixa lateral = status da atividade */
+.task-card[data-status='pendente']::before {
+  background: var(--muted);
 }
 
-.task-card[data-prio='media']::before {
+.task-card[data-status='andamento']::before {
   background: var(--amber, #fbbf24);
 }
 
-.task-card[data-prio='baixa']::before {
-  background: rgba(var(--cyan-rgb), 0.55);
+.task-card[data-status='concluida']::before {
+  background: var(--mint);
 }
 
 .task-card:hover {
@@ -200,8 +225,12 @@
 .task-card-top {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px;
+}
+
+.task-card-top .task-card-title {
+  flex: 1;
+  min-width: 0;
 }
 
 .task-card-title {
@@ -362,12 +391,15 @@
   border-color: rgba(52, 211, 153, 0.32);
 }
 
-.task-edit-btn {
+.task-edit-btn,
+.task-check-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
+  gap: 4px;
+  min-width: 36px;
   height: 36px;
+  padding: 0 8px;
   color: var(--muted);
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--line);
@@ -376,15 +408,151 @@
   transition: color 0.15s, background 0.15s, border-color 0.15s;
 }
 
-.task-edit-btn:hover {
+.task-edit-btn:hover,
+.task-check-toggle:hover {
   color: var(--cyan);
   border-color: rgba(var(--cyan-rgb), 0.35);
   background: rgba(var(--cyan-rgb), 0.1);
 }
 
-.task-edit-btn .icon {
+.task-edit-btn .icon,
+.task-check-toggle .icon {
   width: 16px;
   height: 16px;
+}
+
+.task-check-toggle .icon {
+  transition: transform 0.18s ease;
+}
+
+.task-check-toggle.is-open .icon {
+  transform: rotate(180deg);
+}
+
+.task-check-count {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.task-checklist {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  margin-top: 2px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.task-checklist[hidden] {
+  display: none;
+}
+
+.task-checklist-empty {
+  margin: 0;
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.task-checklist-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.task-checklist-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.task-checklist-list li:hover {
+  background: rgba(var(--cyan-rgb), 0.08);
+  border-color: rgba(var(--cyan-rgb), 0.22);
+}
+
+.task-checklist-list li:focus-visible {
+  outline: 2px solid rgba(var(--cyan-rgb), 0.5);
+  outline-offset: 1px;
+}
+
+.task-checklist-list li input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--cyan);
+  pointer-events: none;
+}
+
+.task-checklist-list li span {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.task-checklist-list li.is-done span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.task-checklist-list li.is-done {
+  background: rgba(52, 211, 153, 0.06);
+}
+
+.task-drag-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: var(--faint);
+  margin-right: 2px;
+}
+
+.task-drag-hint .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.task-card.is-draggable {
+  touch-action: none;
+  cursor: grab;
+}
+
+.task-card.is-dragging {
+  opacity: 0.35;
+}
+
+.task-card-ghost {
+  position: fixed;
+  z-index: 80;
+  margin: 0;
+  pointer-events: none;
+  opacity: 0.92;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  transform: rotate(1.5deg) scale(1.02);
+}
+
+body.is-kanban-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+
+body.is-kanban-dragging .kanban-col {
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 
 /* ---------- Kanban ---------- */
@@ -404,6 +572,12 @@
   background: rgba(0, 0, 0, 0.18);
   border: 1px solid var(--line);
   border-radius: 14px;
+}
+
+.kanban-col.is-drop-target {
+  border-color: rgba(var(--cyan-rgb), 0.55);
+  background: rgba(var(--cyan-rgb), 0.08);
+  box-shadow: inset 0 0 0 1px rgba(var(--cyan-rgb), 0.2);
 }
 
 .kanban-col h3 {
@@ -503,6 +677,13 @@
   text-transform: uppercase;
 }
 
+.tasks-field-hint {
+  margin: -2px 0 0;
+  color: var(--faint);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .tasks-page .modal-form .segmented,
 .tasks-segmented {
   display: grid;
@@ -545,11 +726,6 @@
 
 .tasks-filters .cat-select {
   width: min(160px, 100%);
-}
-
-.tasks-filters:has(.cat-select.is-open) {
-  position: relative;
-  z-index: 6;
 }
 
 .tag-picker {
