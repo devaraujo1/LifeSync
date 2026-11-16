@@ -1,5 +1,4 @@
-// Adapter Gemini API (generateContent + function calling). Sem SDK.
-// Gemini 3.x exige devolver thoughtSignature nos parts de functionCall do turno atual.
+// Gemini 3.x: devolver thoughtSignature nos parts de functionCall do turno atual.
 
 function limparSchema(schema) {
   if (!schema || typeof schema !== 'object') return { type: 'OBJECT', properties: {} }

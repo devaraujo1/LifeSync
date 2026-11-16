@@ -2,8 +2,6 @@ import { createHash } from 'node:crypto'
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-// Aplica migrações SQL em ordem, uma única vez cada. Nunca remove nem reaplica.
-// `executor` precisa de: exec(sql) para scripts com várias instruções e rows(sql, params) para consultas.
 export async function aplicarMigracoes(executor, pasta, log = () => {}) {
   await executor.exec(`
     create table if not exists schema_migrations (

@@ -1,6 +1,3 @@
-// Regras de ciclo, fatura e parcelas do cartão de crédito. Funções puras (sem banco, sem relógio):
-// as datas são strings AAAA-MM-DD e os valores são inteiros em centavos, para não haver erro de ponto flutuante.
-
 const pad = (n) => String(n).padStart(2, '0')
 
 export const diasNoMes = (ano, mes) => new Date(Date.UTC(ano, mes, 0)).getUTCDate() // mes: 1-12
@@ -12,7 +9,6 @@ export function somarDias(data, dias) {
   return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10)
 }
 
-// '2026-11' + 3 -> '2027-02'
 export function somarMeses(mesRef, n) {
   const [a, m] = partesDoMes(mesRef)
   const indice = a * 12 + (m - 1) + n
@@ -62,15 +58,15 @@ export function mesDaFatura(data, diaFechamento) {
 
 // Divide em n parcelas; o arredondamento sobra para a ÚLTIMA (100,00 em 3 = 33,33 + 33,33 + 33,34).
 export function dividirEmParcelas(totalCentavos, n) {
+  const qtd = Math.max(1, Number(n) | 0)
   const sinal = totalCentavos < 0 ? -1 : 1
   const total = Math.abs(totalCentavos)
-  const base = Math.floor(total / n)
-  const parcelas = Array(n).fill(base * sinal)
-  parcelas[n - 1] = (total - base * (n - 1)) * sinal
+  const base = Math.floor(total / qtd)
+  const parcelas = Array(qtd).fill(base * sinal)
+  parcelas[qtd - 1] = (total - base * (qtd - 1)) * sinal
   return parcelas
 }
 
-// Calendário completo de uma compra: cada parcela, o mês de consumo e a fatura em que cai.
 export function montarAgenda({ data, totalCentavos, parcelas, diaFechamento, diaVencimento }) {
   const primeira = mesDaFatura(data, diaFechamento)
   const itens = dividirEmParcelas(totalCentavos, parcelas).map((centavos, i) => ({

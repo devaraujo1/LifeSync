@@ -95,7 +95,6 @@ export const api = {
     requisitar('PUT', c, blob, { bruto: true, cabecalhos: { 'Content-Type': blob.type, 'X-Largura': String(largura), 'X-Altura': String(altura) } })
 }
 
-// Retorna o usuário logado ou null (sem disparar o aviso de sessão expirada).
 export async function carregarSessao() {
   try {
     const { usuario, csrfToken: token } = await requisitar('GET', '/auth/me', undefined, { aoExpirar: false })

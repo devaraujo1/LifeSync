@@ -2,6 +2,7 @@ import { icon, injetarIcones } from './icons.js'
 import { EVENTO, aplicarPreferencias, fotoPerfil, nomeExibicao } from './preferencias.js'
 import { iniciarMotion } from './motion.js'
 import { encerrarSessao } from '../services/conta.js'
+import { escaparHTML } from '../services/storage.js'
 import { iniciarAssistenteUI } from './assistente-ui.js'
 
 const MENU_KEY = 'lifesync-menu'
@@ -34,8 +35,8 @@ function salvarMenu(aberto) {
 function avatarHTML() {
   const foto = fotoPerfil()
   return foto
-    ? `<img src="${foto.replace(/"/g, '&quot;')}" alt="" />`
-    : `<span>${nomeExibicao().charAt(0).toUpperCase()}</span>`
+    ? `<img src="${escaparHTML(foto)}" alt="" />`
+    : `<span>${escaparHTML(nomeExibicao().charAt(0).toUpperCase())}</span>`
 }
 
 function templateSidebar() {
@@ -107,10 +108,8 @@ export function iniciarShell({ pagina }) {
   const menuFab = app.querySelector('#menu-fab')
   const backdrop = app.querySelector('#sidebar-backdrop')
 
-  // Alinhado a --bp-md (700px) em main.css — abaixo disso = menu overlay
   const telaPequena = window.matchMedia('(max-width: 699.98px)')
 
-  // `persistir: false` é usado no recolhimento automático por rolagem: a escolha manual do usuário continua valendo.
   function definirMenu(aberto, { persistir = true } = {}) {
     app.classList.toggle('menu-open', aberto)
     const label = aberto ? 'Recolher menu' : 'Abrir menu'
@@ -130,10 +129,8 @@ export function iniciarShell({ pagina }) {
   menuFab?.addEventListener('click', alternar)
   backdrop?.addEventListener('click', () => definirMenu(false))
 
-  // No mobile o menu é overlay: começa fechado. No desktop respeita a preferência salva.
   definirMenu(telaPequena.matches ? false : lerMenu(), { persistir: false })
 
-  // Recolhe sozinho ao descer a página (depois de rolar uma distância curta a partir do ponto em que o menu abriu).
   const DISTANCIA_PARA_RECOLHER = 48
   let aguardandoQuadro = false
   window.addEventListener(

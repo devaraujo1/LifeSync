@@ -1,8 +1,4 @@
-// Gerador de PDF mínimo, sem dependências: texto, linhas e retângulos em A4,
-// com as fontes padrão Helvetica / Helvetica-Bold (acentos do português incluídos).
-// Coordenadas em pontos (1/72"), com a origem no canto superior esquerdo.
 
-// Larguras (1/1000 em) dos caracteres ASCII 32..126.
 const LARGURAS = [
   278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278,
   556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556,
@@ -21,12 +17,10 @@ const LARGURAS_NEGRITO = [
   611, 611, 389, 556, 333, 611, 556, 778, 556, 556, 500, 389, 280, 389, 584
 ]
 
-// Caracteres fora do ASCII que existem na codificação WinAnsi (cp1252).
 const ESPECIAIS = {
   '€': 0x80, '…': 0x85, '‘': 0x91, '’': 0x92, '“': 0x93, '”': 0x94, '•': 0x95, '–': 0x96, '—': 0x97
 }
 
-// Converte um caractere para o byte WinAnsi (ou "?" se não existir).
 function codigo(c) {
   const n = c.charCodeAt(0)
   if (n >= 32 && n <= 126) return n
@@ -41,7 +35,6 @@ function larguraCaractere(c, negrito) {
   const tabela = negrito ? LARGURAS_NEGRITO : LARGURAS
   if (n >= 32 && n <= 126) return tabela[n - 32]
   if (n === 0xa0) return 278
-  // Letras acentuadas têm a mesma largura da letra base.
   const base = c.normalize('NFD')[0]
   const b = base.charCodeAt(0)
   if (b >= 32 && b <= 126 && base !== c) return tabela[b - 32]
@@ -92,7 +85,6 @@ export class DocumentoPDF {
     return this.paginas.length
   }
 
-  // Seleciona uma página já criada (para desenhar rodapés com "Página X de Y").
   irParaPagina(numero) {
     this.atual = this.paginas[numero - 1]
   }
@@ -114,7 +106,6 @@ export class DocumentoPDF {
     return `${cortado.trimEnd()}...`
   }
 
-  // y é a linha de base do texto, medida a partir do topo.
   texto(texto, x, y, { tam = 10, negrito = false, cor: c = [0, 0, 0], alinhar = 'esquerda' } = {}) {
     if (!texto) return
     const w = this.medir(texto, { tam, negrito })
@@ -173,7 +164,6 @@ export class DocumentoPDF {
     posicoes.forEach((p) => (saida += `${String(p).padStart(10, '0')} 00000 n \n`))
     saida += `trailer\n<< /Size ${objetos.length + 1} /Root 1 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF`
 
-    // Todo o conteúdo é ASCII (acentos saem como escapes octais), então 1 char = 1 byte.
     const bytes = new Uint8Array(saida.length)
     for (let i = 0; i < saida.length; i++) bytes[i] = saida.charCodeAt(i) & 0xff
     return bytes

@@ -9,7 +9,6 @@ const COLUNAS = `id, title, to_char(date, 'YYYY-MM-DD') as data, all_day, start_
 
 const SELECT = `select ${COLUNAS} from events`
 
-// Formato exposto à interface (mesmo modelo usado pela agenda existente).
 export const paraApi = (r) => ({
   id: r.id,
   titulo: r.title,
@@ -110,8 +109,6 @@ export function criarRepoEventos(db) {
       )
       return r
     },
-
-    /* ---------- Sincronização com o Google ---------- */
 
     async pendentes(userId) {
       return db.query(

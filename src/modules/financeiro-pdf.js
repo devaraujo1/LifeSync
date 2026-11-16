@@ -1,15 +1,10 @@
 import { DocumentoPDF, hex } from '../services/pdf.js'
 
-/* Relatório financeiro em PDF (A4, várias páginas).
-   Visual alinhado ao LifeSync (charcoal + lime) e conteúdo detalhado:
-   resumo, composição, indicadores, categorias, top despesas, meta e lista. */
-
 const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
 const brl = (valor) => moeda.format(valor)
 
 const TIPOS = { income: 'Receita', expense: 'Despesa', saving: 'Guardado' }
 
-/* Tokens do site (main.css :root — charcoal + lime) */
 const COR = {
   fundo: hex('#050505'),
   surface: hex('#121214'),
@@ -67,7 +62,7 @@ function rotuloOrigem(t) {
   return 'À vista'
 }
 
-/** Formata valor com sinal coerente (estorno de cartão não fica "- -R$"). */
+// Formata valor com sinal coerente (estorno de cartão não fica "- -R$").
 function valorComSinal(t) {
   const amount = Number(t.amount || 0)
   if (t.type === 'income') return { texto: `+ ${brl(amount)}`, cor: COR.mint }
@@ -77,16 +72,6 @@ function valorComSinal(t) {
   return { texto: `- ${brl(amount)}`, cor: COR.coral }
 }
 
-/**
- * @param {object} dados
- * @param {Array} dados.periodo
- * @param {Array} dados.exibidas
- * @param {string} dados.rotuloPeriodo
- * @param {string} dados.rotuloFiltro
- * @param {number} dados.totalGuardado
- * @param {{ nome?: string, valor: number, prazo: string } | null} [dados.meta]
- * @returns {Blob}
- */
 export function gerarRelatorioFinanceiro({
   periodo,
   exibidas,
@@ -143,13 +128,11 @@ export function gerarRelatorioFinanceiro({
     y += 14
   }
 
-  /* ---------- Cabeçalho ---------- */
 
   doc.novaPagina()
   pintarFundo()
   doc.retangulo(0, 0, L, 112, { preenchimento: COR.surfaceForte })
   doc.retangulo(0, 112, L, 3, { preenchimento: COR.accent })
-  // brilho sutil no canto (aurora)
   doc.retangulo(L - 160, 0, 160, 112, { preenchimento: COR.petrol })
 
   doc.texto('LIFESYNC', MARGEM, 32, { tam: 9, negrito: true, cor: COR.accent })
@@ -173,7 +156,6 @@ export function gerarRelatorioFinanceiro({
 
   y = 138
 
-  /* ---------- Resumo (cards como na tela) ---------- */
 
   kicker('Resumo')
   const cartoes = [
@@ -199,7 +181,6 @@ export function gerarRelatorioFinanceiro({
   })
   y += 72 + 16
 
-  /* ---------- Composição das despesas ---------- */
 
   if (despesasLista.length) {
     garantir(110)
@@ -242,7 +223,6 @@ export function gerarRelatorioFinanceiro({
     })
     y += 54 + 14
 
-    /* Indicadores */
     const positivas = despesasLista.filter((t) => Number(t.amount) > 0)
     const maior = positivas.reduce((m, t) => (Number(t.amount) > Number(m?.amount || 0) ? t : m), null)
     const media = positivas.length ? positivas.reduce((s, t) => s + Number(t.amount), 0) / positivas.length : 0
@@ -281,7 +261,6 @@ export function gerarRelatorioFinanceiro({
     }
   }
 
-  /* ---------- Despesas por categoria ---------- */
 
   const porCategoria = new Map()
   despesasLista.forEach((t) => {
@@ -319,7 +298,6 @@ export function gerarRelatorioFinanceiro({
     }
   }
 
-  /* ---------- Top despesas ---------- */
 
   const top = [...despesasLista]
     .filter((t) => Number(t.amount) > 0)
@@ -343,7 +321,6 @@ export function gerarRelatorioFinanceiro({
     y += 12
   }
 
-  /* ---------- Meta ---------- */
 
   if (meta && Number(meta.valor) > 0) {
     garantir(90)
@@ -376,7 +353,6 @@ export function gerarRelatorioFinanceiro({
     }
   }
 
-  /* ---------- Movimentações ---------- */
 
   const col = {
     data: MARGEM + 6,
@@ -459,7 +435,6 @@ export function gerarRelatorioFinanceiro({
     })
   }
 
-  /* ---------- Rodapé ---------- */
 
   const total = doc.total
   for (let p = 1; p <= total; p++) {

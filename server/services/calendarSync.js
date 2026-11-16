@@ -1,12 +1,4 @@
-// Sincronização bidirecional com o Google Calendar.
-//
-// Estratégia (compatível com serverless, sem processo permanente):
-//  - Sincroniza ao abrir o dashboard (POST /api/calendar/sync, no máximo 1x a cada 30 s),
-//    após cada alteração local (envio imediato) e por um agendador do Netlify (a cada 15 min).
-//  - NÃO é instantâneo: alterações feitas no Google aparecem na próxima sincronização.
-//  - Google -> local: listagem incremental com syncToken; 410 (token expirado) dispara ressincronização completa.
-//  - Local -> Google: id determinístico (uuid sem hífens) torna o reenvio idempotente (409 = já existe).
-//  - Conflitos: vence a alteração mais recente (updated). Exclusão no Google prevalece sobre edição local.
+// syncToken 410 → ressincronização completa; id determinístico (409 = já existe); conflito por `updated`; exclusão no Google vence edição local.
 import { descriptografar, criptografar } from '../lib/crypto.js'
 import { formatarNoFuso } from '../lib/dates.js'
 import { paraApi } from '../repositories/events.js'
@@ -37,8 +29,6 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
       throw erro
     }
   }
-
-  /* ---------- Local -> Google ---------- */
 
   async function atualizarRemoto(ctx, googleId, corpo, etag) {
     return google.calendario.atualizar(ctx.acesso, ctx.calId, googleId, { ...corpo, id: googleId }, etag)
@@ -116,8 +106,16 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
     return 'enviado'
   }
 
-  async function enviarPendentes(userId, ctx, resumo) {
+  function esgotou(prazo) {
+    return typeof prazo === 'number' && Date.now() > prazo
+  }
+
+  async function enviarPendentes(userId, ctx, resumo, prazo) {
     for (const linha of await eventos.pendentes(userId)) {
+      if (esgotou(prazo)) {
+        resumo.parcial = true
+        break
+      }
       try {
         const r = await enviarUm(userId, linha, ctx)
         if (r === 'excluido') resumo.excluidosNoGoogle++
@@ -128,10 +126,9 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
         // Falhas temporárias continuam "pending" e são repetidas na próxima sincronização.
         await eventos.marcarErro(userId, linha.id, e.message, TRANSITORIOS(e) ? 'pending' : 'error')
       }
+      await calendario.renovarTrava(userId).catch(() => {})
     }
   }
-
-  /* ---------- Google -> Local ---------- */
 
   async function processarItem(userId, ctx, g, resumo, vistos) {
     if (g.recurringEventId) {
@@ -175,7 +172,7 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
     resumo.atualizados++
   }
 
-  async function puxar(userId, ctx, conexao, resumo) {
+  async function puxar(userId, ctx, conexao, resumo, prazo) {
     let syncToken = conexao.sync_token
     const desde = new Date(agora().getTime() - JANELA_INICIAL_DIAS * 86400000)
 
@@ -188,6 +185,10 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
       const adiados = []
       try {
         do {
+          if (esgotou(prazo)) {
+            resumo.parcial = true
+            break
+          }
           const query = syncToken
             ? { syncToken, pageToken, maxResults: 250 }
             : { timeMin: desde.toISOString(), pageToken, maxResults: 250, singleEvents: false }
@@ -202,9 +203,16 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
             else mestres.push(g)
           }
           for (const g of mestres) await processarItem(userId, ctx, g, resumo, vistos)
+          await calendario.renovarTrava(userId).catch(() => {})
         } while (pageToken)
 
-        for (const g of adiados) await processarItem(userId, ctx, g, resumo, vistos)
+        for (const g of adiados) {
+          if (esgotou(prazo)) {
+            resumo.parcial = true
+            break
+          }
+          await processarItem(userId, ctx, g, resumo, vistos)
+        }
       } catch (e) {
         if (e.status === 410 && syncToken) {
           // Cursor expirado: descarta e refaz a sincronização completa (uma única vez).
@@ -216,6 +224,9 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
         throw e
       }
 
+      // Sync parcial: não reconcilia ausentes nem avança syncToken (próxima rodada continua).
+      if (resumo.parcial) return null
+
       if (completo) {
         const dataMinima = formatarNoFuso(desde, ctx.fuso).data
         resumo.removidos += await eventos.reconciliarAusentes(userId, [...vistos], dataMinima)
@@ -225,9 +236,7 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
     throw new GoogleError(410, 'sync_token_expirado', 'Não foi possível reiniciar a sincronização.')
   }
 
-  /* ---------- API do serviço ---------- */
-
-  async function sincronizar(userId, { fuso, forcar = false }) {
+  async function sincronizar(userId, { fuso, forcar = false, prazoMs } = {}) {
     const conexao = await calendario.obter(userId)
     if (!conexao || conexao.status !== 'connected') return { estado: 'desconectado' }
     if (!forcar && conexao.segundos_desde_sync !== null && conexao.segundos_desde_sync < 30) {
@@ -235,16 +244,21 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
     }
     if (!(await calendario.adquirirTrava(userId))) return { estado: 'em_andamento' }
 
+    const prazo = typeof prazoMs === 'number' ? Date.now() + Math.max(0, prazoMs) : null
     const resumo = {
       criados: 0, atualizados: 0, removidos: 0, excecoes: 0, ignorados: 0,
-      instanciasAlteradasIgnoradas: 0, enviados: 0, excluidosNoGoogle: 0, erros: 0, ressincronizacaoCompleta: false
+      instanciasAlteradasIgnoradas: 0, enviados: 0, excluidosNoGoogle: 0, erros: 0, ressincronizacaoCompleta: false,
+      parcial: false
     }
     try {
       const ctx = { acesso: await tokenDeAcesso(userId, conexao), calId: conexao.calendar_id, fuso }
-      const proximoToken = await puxar(userId, ctx, conexao, resumo)
-      await enviarPendentes(userId, ctx, resumo)
-      await calendario.registrarSync(userId, { syncToken: proximoToken, erro: resumo.erros ? `${resumo.erros} evento(s) não sincronizado(s).` : null })
-      return { estado: 'ok', resumo }
+      const proximoToken = await puxar(userId, ctx, conexao, resumo, prazo)
+      if (!resumo.parcial) await enviarPendentes(userId, ctx, resumo, prazo)
+      await calendario.registrarSync(userId, {
+        syncToken: proximoToken,
+        erro: resumo.erros ? `${resumo.erros} evento(s) não sincronizado(s).` : null
+      })
+      return { estado: resumo.parcial ? 'parcial' : 'ok', resumo }
     } catch (e) {
       const bruta = e instanceof GoogleError ? e.message : 'Falha inesperada na sincronização.'
       const mensagem = String(bruta).replace(/\b[\w.+-]+@[\w.-]+\.\w+\b/g, '[email]').slice(0, 200)
@@ -315,13 +329,13 @@ export function criarServicoCalendario({ repos, google, config, agora = () => ne
       }
     },
 
-    // Usado pelo agendador do Netlify (sem sessão de usuário).
     async sincronizarTodos({ limite = 25, tempoMaxMs = 20000 } = {}) {
       const inicio = Date.now()
       const resultados = []
       for (const c of await calendario.conectadosParaAgendador(limite)) {
-        if (Date.now() - inicio > tempoMaxMs) break
-        const r = await sincronizar(c.user_id, { fuso: c.timezone, forcar: true })
+        const restante = tempoMaxMs - (Date.now() - inicio)
+        if (restante <= 0) break
+        const r = await sincronizar(c.user_id, { fuso: c.timezone, forcar: true, prazoMs: restante })
         resultados.push(r.estado)
       }
       return resultados

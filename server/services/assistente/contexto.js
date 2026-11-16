@@ -10,10 +10,6 @@ function safe(p) {
   return Promise.resolve(p).catch(() => null)
 }
 
-/**
- * Snapshot compacto do usuário para o system prompt.
- * Best-effort: falha parcial não derruba o chat.
- */
 export async function montarContextoUsuario({ repos, usuario, agora = new Date() }) {
   if (!repos || !usuario?.id) return { texto: '', dados: null }
 

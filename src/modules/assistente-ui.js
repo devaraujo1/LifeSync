@@ -52,7 +52,6 @@ function elBolha(role, texto, extra = '') {
   return wrap.firstElementChild
 }
 
-/** Atalho flutuante no canto — a experiência principal é assistente.html */
 export function iniciarAssistenteUI({ avisar = () => {} } = {}) {
   if (document.getElementById('assistente-dock')) return
   if (document.querySelector('.app[data-page="assistente"]')) return
@@ -92,7 +91,6 @@ export function iniciarAssistenteUI({ avisar = () => {} } = {}) {
     fab.hidden = true
     fab.setAttribute('aria-expanded', 'true')
     root.classList.add('is-open')
-    // Não re-renderiza no meio do envio — senão some a bolha “Pensando…”.
     if (!ocupado) {
       historico = lerHistorico()
       ultimaFalha = lerRetryUi() || null
@@ -132,7 +130,6 @@ export function iniciarAssistenteUI({ avisar = () => {} } = {}) {
   fab.addEventListener('click', abrir)
   fechar.addEventListener('click', fecharPainel)
   window.addEventListener(EVENTO_CONVERSAS, () => {
-    // Não apaga “Pensando…” / erro no meio do envio
     if (!panel.hidden && !ocupado) {
       historico = lerHistorico()
       renderMsgs()
@@ -217,6 +214,10 @@ export function iniciarAssistenteUI({ avisar = () => {} } = {}) {
       }
     } catch (erro) {
       pensando.remove()
+      if (erro?.name === 'AbortError' || erro?.codigo === 'abortado' || erro?.codigo === 'timeout') {
+        historico = lerHistorico()
+        return
+      }
       historico = lerHistorico()
       ultimaFalha = texto
       const msg = mensagemErroAmigavel(erro)

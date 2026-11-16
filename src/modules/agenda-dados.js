@@ -27,26 +27,11 @@ export const MESES_CURTOS = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'A
 
 export const categoriaDe = (id) => CATEGORIAS_EVENTO.find((c) => c.id === id) ?? CATEGORIAS_EVENTO[0]
 
-/*
-  Modelo de evento:
-  {
-    id, titulo, data: 'AAAA-MM-DD',          // data da primeira ocorrência
-    diaInteiro, inicio: 'HH:MM', fim: 'HH:MM',
-    categoria, notas,
-    rec: { tipo, dias: [0..6], ate: 'AAAA-MM-DD' | '' },   // dias: só para "semanal"
-    excecoes: ['AAAA-MM-DD'],                 // ocorrências excluídas individualmente
-    sincronizacao: { estado, erro, somenteLeitura }   // situação no Google Calendar (vem do servidor)
-  }
-*/
-
-// Eventos da conta (o servidor valida, normaliza e propaga ao Google Calendar quando conectado).
 export const carregarEventos = () => eventosApi.listar()
 
-/* ---------- Recorrência ---------- */
 
 const diasNoMes = (ano, mes) => new Date(ano, mes, 0).getDate() // mes: 1-12
 
-// O evento acontece na data "chave"?
 export function ocorreEm(evento, chave) {
   if (!evento?.data || !chave) return false
   if (chave < evento.data) return false
@@ -106,7 +91,6 @@ export function proximasOcorrencias(eventos, { limite = 4, dias = 370, agora = n
   return resultado
 }
 
-/* ---------- Textos ---------- */
 
 export function descreverHorario(evento) {
   if (evento.diaInteiro) return 'Dia inteiro'

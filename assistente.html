@@ -12,11 +12,15 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Montserrat:wght@200;300;400;500;600;700&display=swap">
   <script>
     try {
-      var p = JSON.parse(localStorage.getItem('lifesync-preferencias')) || {}
-      var r = document.documentElement
-      if (p.destaque) r.dataset.accent = p.destaque
-      r.dataset.aurora = { animado: 'animada', estatico: 'estatica', desligado: 'desligada' }[p.fundo] || 'animada'
-      if (p.densidade) r.dataset.densidade = p.densidade
+      var dono = localStorage.getItem('lifesync-cache-dono')
+      var sessao = sessionStorage.getItem('lifesync-sessao-uid')
+      if (dono && sessao && dono === sessao) {
+        var p = JSON.parse(localStorage.getItem('lifesync-preferencias')) || {}
+        var r = document.documentElement
+        if (p.destaque) r.dataset.accent = p.destaque
+        r.dataset.aurora = { animado: 'animada', estatico: 'estatica', desligado: 'desligada' }[p.fundo] || 'animada'
+        if (p.densidade) r.dataset.densidade = p.densidade
+      }
     } catch (e) {}
   </script>
 </head>

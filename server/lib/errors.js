@@ -1,4 +1,3 @@
-// Erros HTTP previsíveis. O tratador central converte para JSON consistente.
 export class HttpError extends Error {
   constructor(status, codigo, mensagem, detalhes) {
     super(mensagem)

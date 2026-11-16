@@ -65,8 +65,14 @@ O Netlify **lê o repositório do GitHub** e faz o build. Não use o "arrastar e
 | `GOOGLE_CLIENT_SECRET` | Google Cloud → Credenciais | sim |
 | `ALLOWED_EMAILS` | seu e-mail Google (vírgula para mais de um) | não |
 | `DEFAULT_TIMEZONE` | opcional, ex.: `America/Sao_Paulo` | não |
+| `CRON_SECRET` | gerado por `npm run gerar-chaves` (ou outro segredo longo) | sim |
+| `AI_PROVIDER` / `AI_API_KEY` / `AI_MODEL` | opcional; só se for usar o assistente | sim (chave) |
 
 Em produção a API **não inicia** se faltar variável obrigatória ou se `ALLOWED_EMAILS` estiver vazia (para nunca ficar aberta a qualquer conta).
+
+`CRON_SECRET` é **obrigatório** em produção para `/.netlify/functions/calendar-sync`. O scheduler do Netlify (`x-netlify-event: schedule`) e chamadas manuais com `Authorization: Bearer …` / `x-cron-secret` são aceitos. Sem a variável a função responde 503 (fail-closed). Limites de taxa da API são por isolate em memória — sob concorrência alta no Netlify, considere WAF/edge rate limit.
+
+Quando o console do navegador estiver limpo de violações CSP, promova `Content-Security-Policy-Report-Only` em `netlify.toml` para `Content-Security-Policy` (enforcing).
 
 ## 3. Neon (banco)
 1. Recomendado: crie um **branch** `production` separado do que você usa para desenvolvimento.

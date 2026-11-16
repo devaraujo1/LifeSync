@@ -8,7 +8,6 @@ import { iniciarAgendaInicio } from '../modules/agenda.js'
 import { EVENTO, nomeSaudacao } from '../modules/preferencias.js'
 import { financeiroApi } from '../services/financeiroApi.js'
 
-// O shell injeta o menu lateral, o sprite de ícones, a conta e o painel de perfil.
 iniciarShell({ pagina: 'inicio' })
 
 iniciarRelogio()
@@ -41,8 +40,6 @@ function iniciarSaudacao() {
 
 iniciarSaudacao()
 
-// Saldo do mês atual: calculado pelo servidor a partir das movimentações da conta
-// (receitas − despesas − guardado, a mesma regra da tela Financeiro).
 async function iniciarSaldoDoMes() {
   const elemento = document.querySelector('#month-balance')
   if (!elemento) return

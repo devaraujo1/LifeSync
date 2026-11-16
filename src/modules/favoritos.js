@@ -5,13 +5,6 @@ import { favoritosApi } from '../services/favoritosApi.js'
 export const CATEGORIAS_PADRAO = ['Estudos', 'Desenvolvimento', 'Dia a dia', 'Games']
 const LIMITE_ATALHOS = 8
 
-/*
-  Modelo de favorito:
-  { id, nome, url, categoria, fixado, criado }
-  fixado: aparece nos atalhos da página inicial.
-*/
-
-// Favoritos da conta (o servidor devolve o modelo já normalizado).
 export const carregarFavoritos = () => favoritosApi.listar()
 
 // Aceita "exemplo.com" e completa com https://. Só permite http e https.
@@ -45,7 +38,6 @@ export function categoriasEm(lista) {
   return [...CATEGORIAS_PADRAO, ...extras]
 }
 
-/* ---------- Ícones dos sites ---------- */
 
 // Nenhum serviço de favicon conhece todos os sites, então cada site passa por uma sequência de fontes:
 // 1) DuckDuckGo, 2) o próprio site (/favicon.ico), 3) Google. Cada fonte é tentada primeiro com o endereço
@@ -183,7 +175,6 @@ export function criarIconeSite(favorito) {
   return caixa
 }
 
-/* ---------- Atalhos na página inicial ---------- */
 
 export function iniciarAtalhos() {
   const raiz = document.querySelector('#shortcuts')

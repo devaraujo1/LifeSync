@@ -1,6 +1,4 @@
-// Porta de entrada das páginas: exige login Google antes de carregar qualquer módulo do dashboard.
-// Também prepara a conta (cache local + preferências do servidor) e trata sessão expirada.
-import { EVENTO_SESSAO_EXPIRADA, api, carregarSessao, entrarComGoogle, precarregar } from './api.js'
+import { EVENTO_SESSAO_EXPIRADA, carregarSessao, entrarComGoogle, precarregar } from './api.js'
 
 const ESTILO = `
 .guarda{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:16px;
@@ -52,8 +50,6 @@ function destinoDeRetorno() {
   return window.location.pathname || '/'
 }
 
-/* ---------- Avisos curtos ---------- */
-
 const MAX_TOASTS = 3
 const toastsAtivos = []
 
@@ -78,13 +74,21 @@ export function avisar(texto, tipo = 'info', ms = 7000) {
   toastsAtivos.push({ el, timer })
 }
 
-/* ---------- Tela de login ---------- */
-
 let telaAberta = false
+
+function definirAppInerte(inerte) {
+  const app = document.querySelector('.app')
+  if (app) app.inert = Boolean(inerte)
+}
+
+function removerGuarda() {
+  document.querySelector('.guarda')?.remove()
+  definirAppInerte(false)
+}
 
 function montarTela({ texto, aviso, botao = 'Entrar com Google', icone = GOOGLE_G, aoClicar }) {
   garantirEstilo()
-  document.querySelector('.guarda')?.remove()
+  removerGuarda()
   const tela = document.createElement('div')
   tela.className = 'guarda'
   tela.setAttribute('role', 'dialog')
@@ -110,7 +114,28 @@ function montarTela({ texto, aviso, botao = 'Entrar com Google', icone = GOOGLE_
     b.disabled = true
     aoClicar()
   })
+  // Trap de foco: Tab cicla só dentro do diálogo.
+  tela.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return
+    const foco = [...tela.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')].filter(
+      (el) => !el.disabled && el.offsetParent !== null
+    )
+    if (foco.length < 2) {
+      e.preventDefault()
+      foco[0]?.focus()
+      return
+    }
+    const i = foco.indexOf(document.activeElement)
+    if (e.shiftKey && (i <= 0)) {
+      e.preventDefault()
+      foco[foco.length - 1].focus()
+    } else if (!e.shiftKey && (i === foco.length - 1 || i < 0)) {
+      e.preventDefault()
+      foco[0].focus()
+    }
+  })
   document.body.append(tela)
+  definirAppInerte(true)
   b.focus()
 }
 
@@ -136,7 +161,7 @@ function telaErroServidor(erro) {
       botao: 'Tentar novamente',
       icone: '',
       aoClicar: () => {
-        document.querySelector('.guarda')?.remove()
+        removerGuarda()
         resolver()
       }
     })
@@ -152,8 +177,6 @@ function lerErroDeLogin() {
   return MENSAGENS_ERRO[codigo] ?? MENSAGENS_ERRO.falha
 }
 
-/* ---------- Preparo da conta ---------- */
-
 async function prepararConta(usuario) {
   const cache = await import('./cacheLocal.js')
 
@@ -166,6 +189,11 @@ async function prepararConta(usuario) {
   const preferencias = await import('../modules/preferencias.js')
   preferencias.definirUsuarioExterno({ nome: usuario.nome, foto: usuario.foto })
   cache.definirDonoDoCache(usuario.id)
+  try {
+    sessionStorage.setItem('lifesync-sessao-uid', usuario.id)
+  } catch {
+    /* ignore */
+  }
 
   // Neste navegador já há preferências desta conta em cache: a página abre na hora com elas e a versão do
   // servidor entra em segundo plano (o evento de preferências atualiza nome, avatar e cartões sem recarregar).
@@ -188,8 +216,6 @@ function vigiarSessao() {
     telaLogin('Sua sessão expirou. Entre novamente para continuar.')
   })
 }
-
-/* ---------- API pública ---------- */
 
 // `precarregar`: caminhos GET da API que a página vai pedir logo em seguida. Eles saem já na confirmação da
 // sessão, em paralelo com a preparação da conta e o download dos módulos da página.
@@ -218,6 +244,7 @@ export async function exigirLogin({ precarregar: caminhos = [] } = {}) {
     console.error('Falha ao preparar a conta:', erro)
     avisar('Não foi possível sincronizar suas preferências agora. O dashboard continua funcionando.', 'aviso')
   }
+  document.documentElement.dataset.authReady = '1'
   vigiarSessao()
   return usuario
 }

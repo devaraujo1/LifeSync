@@ -26,7 +26,7 @@ export function criarRotasAuth({ config, repos, google, limites }) {
       { tipo: 'login', state, nonce, verificador, returnTo: destinoSeguro(req.query.returnTo), exp: Date.now() + 10 * 60_000 },
       config.sessionSecret
     )
-    definirCookie(res, config.cookieOAuth, tx, { ...cookieOpts, maxAgeSeg: 600 })
+    definirCookie(res, config.cookieOAuthLogin, tx, { ...cookieOpts, maxAgeSeg: 600 })
     res.redirect(
       302,
       google.montarUrlAutorizacao({
@@ -43,8 +43,8 @@ export function criarRotasAuth({ config, repos, google, limites }) {
     '/google/callback',
     limites.autenticacao,
     assincrono(async (req, res) => {
-      const tx = verificarAssinatura(req.cookies?.[config.cookieOAuth], config.sessionSecret)
-      limparCookie(res, config.cookieOAuth, cookieOpts)
+      const tx = verificarAssinatura(req.cookies?.[config.cookieOAuthLogin], config.sessionSecret)
+      limparCookie(res, config.cookieOAuthLogin, cookieOpts)
       const voltar = (motivo) => res.redirect(302, `${config.appUrl}/?erro_login=${motivo}`)
 
       if (!tx || tx.tipo !== 'login' || tx.exp < Date.now()) return voltar('sessao_expirada')

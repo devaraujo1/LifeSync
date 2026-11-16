@@ -42,7 +42,6 @@ function labelTipoTx(t) {
   return 'Despesa'
 }
 
-/** Exibe data amigável no card; args continuam em AAAA-MM-DD. */
 function rotuloData(iso, usuario, agora) {
   const hoje = hojeDe(usuario, agora)
   if (!iso) return 'Hoje'
@@ -52,7 +51,6 @@ function rotuloData(iso, usuario, agora) {
   return String(iso)
 }
 
-/** Aceita Hoje, AAAA-MM-DD, AAAA/MM/DD, DD/MM/AAAA. */
 export function normalizarDataEdit(valor, ctx) {
   const s = String(valor ?? '').trim()
   if (!s) return s
@@ -97,10 +95,6 @@ function padHora(h) {
   return `${m[1].padStart(2, '0')}:${m[2]}`
 }
 
-/**
- * Aceita: Dia inteiro | 14:00 | 14:00-15:00 | 14h | 14h30 | 14h30 às 16h | — 
- * @returns {{ diaInteiro: boolean, inicio: string, fim: string } | null}
- */
 export function normalizarHoraEdit(valor) {
   const s = String(valor ?? '').trim()
   if (!s || /^dia\s*inteiro$/i.test(s) || /^[—–−\-]$/.test(s)) {
@@ -116,7 +110,6 @@ export function normalizarHoraEdit(valor) {
     .replace(/\s+/g, ' ')
     .trim()
 
-  // 14h30-16h00 / 14h-16h / 14h30
   let m = norm.match(/^(\d{1,2})h(\d{2})?(?:-(\d{1,2})h(\d{2})?)?$/i)
   if (m) {
     return {
@@ -126,7 +119,6 @@ export function normalizarHoraEdit(valor) {
     }
   }
 
-  // 14:00-15:00 / 14:00
   m = norm.match(/^(\d{1,2}):(\d{2})(?:\s*-\s*(\d{1,2}):(\d{2}))?$/)
   if (m) {
     return {
@@ -136,7 +128,6 @@ export function normalizarHoraEdit(valor) {
     }
   }
 
-  // 14 - 15 (só hora)
   m = norm.match(/^(\d{1,2})\s*-\s*(\d{1,2})$/)
   if (m) {
     return {
@@ -182,16 +173,11 @@ function card({ modulo, destaque, campos, pergunta, titulo }) {
     modulo,
     destaque: destaque || null,
     campos: campos.filter((c) => c.valor != null && String(c.valor).trim() !== ''),
-    // Sem pergunta genérica: os botões Aprovar/Editar/Cancelar já bastam.
     pergunta: pergunta ?? null,
     status: 'Pendente'
   }
 }
 
-/**
- * Valida args e monta prévia para o card do chat.
- * @returns {{ args: object, preview: object, resumo: string }}
- */
 export async function montarPreviaEscrita(nome, argsBrutos, ctx) {
   const { repos, usuario, agora = new Date() } = ctx
   const args = argsBrutos && typeof argsBrutos === 'object' ? argsBrutos : {}
@@ -502,11 +488,9 @@ export async function montarPreviaEscrita(nome, argsBrutos, ctx) {
   }
 }
 
-/** Reaplica campos editados no cliente sobre os args pendentes. */
 export async function mesclarEdicaoPrevia(tool, argsAtuais, edicao, ctx) {
   const patch = edicao && typeof edicao === 'object' ? { ...edicao } : {}
 
-  // Labels só de UI
   if (tool === 'criar_compra_cartao') delete patch.pagamento
   else if (/^cart[aã]o$/i.test(String(patch.pagamento || '').trim())) delete patch.pagamento
   delete patch.id

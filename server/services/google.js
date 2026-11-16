@@ -1,7 +1,5 @@
-// Atualização usa PATCH (parcial): preserva convidados, local, videochamada etc. que o dashboard não conhece.
-// Cliente mínimo do Google (OAuth 2.0 / OIDC e Calendar API v3) usando fetch.
-// Sem SDK: menos dependências no pacote da função serverless e fácil de simular nos testes.
-import { desafioPKCE } from '../lib/crypto.js'
+// PATCH parcial: preserva convidados, local e videochamada que o dashboard não modela.
+import { desafioPKCE, iguaisSeguro } from '../lib/crypto.js'
 
 const AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth'
 const TOKEN_URL = 'https://oauth2.googleapis.com/token'
@@ -128,7 +126,7 @@ export function criarClienteGoogle({ config, fetchImpl = globalThis.fetch, atras
       const aud = Array.isArray(c.aud) ? c.aud : [c.aud]
       if (!aud.includes(clientId)) throw new GoogleError(400, 'id_token_invalido', 'Público inválido.')
       if (!c.exp || c.exp + 60 < agora) throw new GoogleError(400, 'id_token_invalido', 'id_token expirado.')
-      if (!c.nonce || c.nonce !== nonce) throw new GoogleError(400, 'id_token_invalido', 'Nonce inválido.')
+      if (!c.nonce || !iguaisSeguro(c.nonce, nonce)) throw new GoogleError(400, 'id_token_invalido', 'Nonce inválido.')
       if (!c.sub) throw new GoogleError(400, 'id_token_invalido', 'Identificador ausente.')
       return c
     },

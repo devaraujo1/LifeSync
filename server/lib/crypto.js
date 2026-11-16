@@ -9,8 +9,6 @@ export function iguaisSeguro(a, b) {
   return x.length === y.length && timingSafeEqual(x, y)
 }
 
-/* ---------- Assinatura (cookie temporário do fluxo OAuth) ---------- */
-
 export function assinar(objeto, segredo) {
   const corpo = Buffer.from(JSON.stringify(objeto)).toString('base64url')
   const mac = createHmac('sha256', segredo).update(corpo).digest('base64url')
@@ -29,8 +27,6 @@ export function verificarAssinatura(valor, segredo) {
     return null
   }
 }
-
-/* ---------- AES-256-GCM (refresh token do Google) ---------- */
 
 function chaveDe(base64) {
   const chave = Buffer.from(base64 ?? '', 'base64')
@@ -52,7 +48,5 @@ export function descriptografar(valor, chaveBase64) {
   decifra.setAuthTag(Buffer.from(tag, 'base64url'))
   return Buffer.concat([decifra.update(Buffer.from(dados, 'base64url')), decifra.final()]).toString('utf8')
 }
-
-/* ---------- PKCE ---------- */
 
 export const desafioPKCE = (verificador) => createHash('sha256').update(verificador).digest('base64url')

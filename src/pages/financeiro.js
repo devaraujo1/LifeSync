@@ -5,13 +5,13 @@ import { icon } from '../modules/icons.js'
 import { iniciarShell, mostrarAviso } from '../modules/shell.js'
 import { baixarArquivo, gerarRelatorioFinanceiro, nomeArquivoFinanceiro } from '../modules/financeiro-pdf.js'
 import { criarSeletorCategoria } from '../modules/seletor-categoria.js'
+import { obterUsuario } from '../services/api.js'
 import { cartoesApi } from '../services/cartoesApi.js'
 import { financeiroApi } from '../services/financeiroApi.js'
 import { iniciarCartoes } from './cartoes.js'
 
 iniciarShell({ pagina: 'financeiro' })
 
-// Tipos: expense (despesa), income (receita), saving (dinheiro guardado)
 const CATEGORIAS = {
   expense: ['Moradia', 'Alimentação', 'Transporte', 'Lazer', 'Outros'],
   income: ['Salário', 'Investimentos', 'Outros'],
@@ -38,7 +38,6 @@ const CORES = {
   Outros: '#9aa3ab'
 }
 
-// Categorias criadas pelo usuário ganham uma cor da paleta, sempre a mesma para o mesmo nome.
 const PALETA_EXTRA = ['#c8f578', '#f4909c', '#A4EB3C', '#8fd94a', '#6fa82a', '#fcd34d', '#93c5fd', '#fdba74']
 
 function corDaCategoria(nome) {
@@ -91,14 +90,25 @@ const currencyFormatter = new Intl.NumberFormat('pt-BR', {
 
 let activeFilter = 'all'
 
-/* ---------- Utilidades ---------- */
-
 function getToday() {
+  // Preferir fuso da conta (mesmo do painel de cartões) para não cruzar ciclo perto da meia-noite.
+  try {
+    const fuso = obterUsuario()?.fuso
+    if (fuso) {
+      return new Intl.DateTimeFormat('en-CA', {
+        timeZone: fuso,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(new Date())
+    }
+  } catch {
+    /* fallback local */
+  }
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
-
   return `${year}-${month}-${day}`
 }
 
@@ -107,6 +117,7 @@ function formatCurrency(value) {
 }
 
 function formatDate(date) {
+  if (!date || typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(date)) return '—'
   const [year, month, day] = date.split('-')
   return `${day}/${month}/${year}`
 }
@@ -120,10 +131,8 @@ function emptyMessage(text) {
 
 dateInput.value = getToday()
 
-/* ---------- Dados da conta (API) ---------- */
-
 let transactions = []
-let customCategories = [] // { id, tipo, nome } criadas pelo usuário
+let customCategories = []
 let goal = null
 let loaded = false
 let loadError = ''
@@ -141,15 +150,12 @@ async function fetchAll() {
   const [list, savedGoal, categories, cardConsumption] = await Promise.all([
     financeiroApi.listar(),
     financeiroApi.obterMeta(),
-    // Sem as categorias próprias a tela continua útil (as padrão e as já usadas aparecem do mesmo jeito).
     financeiroApi.listarCategorias().catch(() => customCategories),
-    // Se o módulo de cartões falhar, o resto do Financeiro continua funcionando com o que já tinha.
     cartoesApi.consumo().catch(() => transactions.filter(isCardEntry))
   ])
   return { list: [...list, ...cardConsumption], savedGoal, categories }
 }
 
-// Só o consumo do cartão mudou (compra, estorno, exclusão): troca essas linhas e redesenha.
 async function reloadCardConsumption() {
   try {
     const consumption = await cartoesApi.consumo()
@@ -205,8 +211,6 @@ function renderLoading() {
   }
 }
 
-/* ---------- Filtro por mês/ano ---------- */
-
 const now = new Date()
 const period = {
   year: String(now.getFullYear()),
@@ -261,8 +265,6 @@ function periodLabel() {
   return `${MESES_LONGOS[Number(period.month) - 1]} de ${period.year}`
 }
 
-/* ---------- Tipo de movimentação e categorias ---------- */
-
 // Padrão + criadas pelo usuário + nomes já usados em movimentações do mesmo tipo (inclusive de categorias
 // removidas depois), sem repetir. "Outros" fica sempre por último.
 function categoriesFor(type) {
@@ -297,9 +299,7 @@ function fillCategories() {
 const isCustomCategoryOf = (type, name) =>
   customCategories.some((c) => c.tipo === type && normalizar(c.nome) === normalizar(name))
 
-// Criar/remover categorias próprias, para qualquer tipo (usado pelo formulário de movimentações e pelo de cartões).
 async function createCategory(type, name) {
-  // Se já existe (padrão, própria ou já usada em movimentações), só usa a existente.
   const existing = categoriesFor(type).find((n) => normalizar(n) === normalizar(name))
   if (existing) return existing
 
@@ -338,8 +338,6 @@ typeButtons.forEach((button) =>
   button.addEventListener('click', () => setType(button.dataset.type))
 )
 
-/* ---------- Resumo (respeita o período) ---------- */
-
 function sumByType(list, type) {
   return list
     .filter((item) => item.type === type)
@@ -359,8 +357,6 @@ function updateSummary(list) {
   balanceElement.classList.toggle('is-negative', balance < 0)
 }
 
-/* ---------- Gráfico: despesas por categoria (rosca) ---------- */
-
 function renderCategoryChart(list) {
   const totals = new Map()
 
@@ -378,7 +374,6 @@ function renderCategoryChart(list) {
     return
   }
 
-  // Estornos podem zerar uma categoria no período: ela simplesmente não aparece na rosca.
   const entries = [...totals.entries()].filter(([, value]) => value > 0).sort((a, b) => b[1] - a[1])
   if (entries.length === 0) {
     categoryChart.append(emptyMessage('Sem despesas neste período.'))
@@ -435,10 +430,7 @@ function renderCategoryChart(list) {
   categoryChart.append(wrapper, legend)
 }
 
-/* ---------- Metas financeiras ---------- */
-
 function totalSaved() {
-  // A meta considera tudo o que já foi guardado, independente do filtro de período.
   return sumByType(transactions, 'saving')
 }
 
@@ -558,8 +550,6 @@ function renderGoal() {
   goalChart.append(top, hint)
 }
 
-/* Pop-up da meta */
-
 const goalDialog = document.querySelector('#goal-dialog')
 const goalForm = document.querySelector('#goal-form')
 const goalName = document.querySelector('#goal-name')
@@ -642,9 +632,6 @@ goalDelete.addEventListener('click', async () => {
   renderGoal()
 })
 
-/* ---------- Histórico ---------- */
-
-// Movimentações do período já filtradas por tipo e ordenadas (usadas na tela e no PDF).
 function getVisible(list) {
   return list
     .filter((item) => activeFilter === 'all' || item.type === activeFilter)
@@ -697,7 +684,6 @@ function renderTransactions(list) {
     value.className = `transaction-value ${transaction.type}`
 
     const signal = { income: '+ ', expense: '− ', saving: '' }[transaction.type] ?? ''
-    // Estorno/crédito no cartão chega como despesa negativa: aparece como valor a favor.
     const refund = isCardEntry(transaction) && transaction.amount < 0
     value.textContent = refund ? `+ ${formatCurrency(-transaction.amount)}` : `${signal}${formatCurrency(transaction.amount)}`
 
@@ -727,7 +713,6 @@ function renderTransactions(list) {
     })
 
     if (isCardEntry(transaction)) {
-      // Lançamento do cartão: só leitura aqui. Para alterar, use a seção "Cartões de crédito".
       const tag = document.createElement('span')
       tag.className = 'card-origin-tag'
       tag.textContent = 'Cartão'
@@ -745,7 +730,6 @@ const exportButton = document.querySelector('#export-pdf')
 const FILTER_LABELS = { all: 'Todas', income: 'Entradas', expense: 'Despesas', saving: 'Guardado' }
 
 function updateExportButton(list) {
-  // Exporta o período inteiro (resumo + categorias); a tabela respeita o filtro ativo.
   const empty = list.length === 0
   exportButton.disabled = empty
   exportButton.title = empty
@@ -853,8 +837,10 @@ form.addEventListener('submit', async (event) => {
 // Ao voltar para a aba, traz alterações feitas em outro dispositivo ou aba.
 document.addEventListener('visibilitychange', async () => {
   if (document.hidden || !loaded) return
+  const generation = ++loadGeneration
   try {
     const { list, savedGoal, categories } = await fetchAll()
+    if (generation !== loadGeneration) return
     transactions = list
     goal = savedGoal
     customCategories = categories
@@ -874,7 +860,6 @@ window.addEventListener('lifesync:assistente-acao', (ev) => {
   if (!areas.length || areas.some((a) => a === 'financeiro' || a === 'cartoes')) loadData()
 })
 
-// Seção "Cartões de crédito": usa as mesmas categorias das despesas e avisa esta tela quando o consumo muda.
 iniciarCartoes({
   categorias: {
     opcoes: () => categoriesFor('expense'),

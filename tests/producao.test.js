@@ -21,6 +21,10 @@ describe('compatibilidade com o Netlify', () => {
     expect(api).toMatch(/serverless-http/)
     const agendador = await ler('netlify/functions/calendar-sync.js')
     expect(agendador).toMatch(/schedule:\s*'\*\/15 \* \* \* \*'/)
+    expect(agendador).toMatch(/timingSafeEqual/)
+    expect(agendador).toMatch(/x-netlify-event/)
+    expect(agendador).toMatch(/cron_nao_configurado/)
+    expect(agendador).toMatch(/NODE_ENV === 'production'/)
   })
 
   it('o servidor usa o driver HTTP do Neon (sem pool persistente) e nenhum arquivo local', async () => {

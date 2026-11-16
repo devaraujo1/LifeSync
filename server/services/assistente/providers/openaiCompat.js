@@ -1,5 +1,3 @@
-// Adapter Chat Completions + tools (OpenAI, Groq, OpenRouter, HF router, etc.).
-
 function paraToolsOpenAI(tools) {
   return tools.map((t) => ({
     type: 'function',

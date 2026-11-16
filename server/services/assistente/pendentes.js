@@ -1,7 +1,6 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
 
 const TTL_MS = 10 * 60 * 1000
-/** Evita payload gigante (ex.: anotação grande) na tabela de pendências. */
 const MAX_JSON_CHARS = 12_000
 
 function limitarJson(valor) {
@@ -23,7 +22,6 @@ function limitarJson(valor) {
   return valor
 }
 
-/** JSON estável (chaves ordenadas) — sobrevive a round-trip jsonb. */
 function estavel(v) {
   if (v === null || typeof v !== 'object') return JSON.stringify(v)
   if (Array.isArray(v)) return `[${v.map(estavel).join(',')}]`
@@ -72,9 +70,6 @@ function payloadAssinado(item) {
   }
 }
 
-/**
- * @param {{ userId, kind: 'exclusao'|'escrita', resumo, secret, tipo?, idAlvo?, tool?, args?, preview?, repos }} p
- */
 export async function guardarPendencia(p) {
   const repo = p.repos?.assistentePendentes
   if (!repo) throw new Error('Repositório de pendências ausente.')
@@ -116,20 +111,60 @@ export async function lerPendencia({ confirmId, userId, secret, repos }) {
 export async function consumirPendencia({ confirmId, userId, secret, repos }) {
   const repo = repos?.assistentePendentes
   if (!repo) return null
-  // Valida antes de consumir (evita apagar se a assinatura estiver inválida).
-  const atual = await lerPendencia({ confirmId, userId, secret, repos })
-  if (!atual) return null
+  // Consome de forma atômica e valida HMAC no row do RETURNING (evita args obsoletos se /editar-previa correr no meio).
   const r = await repo.consumir(confirmId, userId)
   if (!r) return null
+  const item = linhaParaItem(r)
+  if (!item || !verificarAssinatura(payloadAssinado(item), item.assinatura, secret)) return null
   return {
-    kind: atual.kind || 'exclusao',
-    tipo: atual.tipo,
-    id: atual.idAlvo,
-    tool: atual.tool,
-    args: atual.args,
-    preview: atual.preview,
-    resumo: atual.resumo
+    confirmId: r.id,
+    userId: item.userId,
+    kind: item.kind || 'exclusao',
+    tipo: item.tipo,
+    id: item.idAlvo,
+    tool: item.tool,
+    args: item.args,
+    preview: item.preview,
+    resumo: item.resumo,
+    assinatura: item.assinatura,
+    expiraEm: item.expiraEm
   }
+}
+
+export async function restaurarPendencia({
+  confirmId,
+  userId,
+  kind,
+  tipo,
+  id,
+  tool,
+  args,
+  preview,
+  resumo,
+  secret,
+  repos,
+  expiraEm
+}) {
+  const repo = repos?.assistentePendentes
+  if (!repo || !confirmId) return false
+  const dados = {
+    userId,
+    kind: kind || 'exclusao',
+    tipo: tipo ?? null,
+    idAlvo: id ?? null,
+    tool: tool ?? null,
+    args: limitarJson(args ?? null),
+    preview: limitarJson(preview ?? null),
+    resumo: String(resumo ?? '').slice(0, 500)
+  }
+  const assinatura = assinar(payloadAssinado(dados), secret)
+  await repo.inserir({
+    id: confirmId,
+    ...dados,
+    assinatura,
+    expiraEm: expiraEm && expiraEm > Date.now() ? expiraEm : Date.now() + TTL_MS
+  })
+  return true
 }
 
 export async function atualizarPendencia({ confirmId, userId, secret, args, preview, resumo, repos }) {

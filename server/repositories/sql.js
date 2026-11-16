@@ -1,6 +1,4 @@
-// Helper para UPDATE parcial. Nomes de tabela/coluna vêm SEMPRE do código (nunca do cliente);
-// só os valores são parametrizados.
-// campos: { coluna: [valor, 'cast'?] }
+// Nomes de tabela/coluna só vêm do código (nunca do cliente); valores parametrizados.
 export async function atualizarCampos(db, tabela, userId, id, campos) {
   const params = [id, userId]
   const sets = []

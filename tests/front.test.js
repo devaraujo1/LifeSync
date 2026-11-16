@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CHAVE_DONO, definirDonoDoCache, donoDoCache, limparCache } from '../src/services/cacheLocal.js'
 
-// localStorage falso (o ambiente de teste é Node)
 function armazenamentoFalso(inicial = {}) {
   const m = new Map(Object.entries(inicial))
   return {

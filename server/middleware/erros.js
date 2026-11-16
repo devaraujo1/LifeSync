@@ -4,7 +4,6 @@ export function naoEncontradaRota(_req, _res, next) {
   next(new HttpError(404, 'rota_inexistente', 'Rota não encontrada.'))
 }
 
-// Tratador central: formato de erro único e sem vazamento de detalhes internos.
 // eslint-disable-next-line no-unused-vars
 export function tratarErros(erro, req, res, _next) {
   if (res.headersSent) return

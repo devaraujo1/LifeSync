@@ -6,21 +6,7 @@ const DIAS_CURTOS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
 const DIAS_LONGOS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado']
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
-/*
-  Modelo de tarefa:
-  {
-    id, texto,
-    tipo: 'unica' | 'recorrente',
-    data: 'AAAA-MM-DD',     // só para tarefas únicas
-    dias: [0..6],           // só para recorrentes (0 = domingo)
-    criada: 'AAAA-MM-DD',   // recorrentes só aparecem a partir daqui
-    concluidas: { 'AAAA-MM-DD': true },  // conclusão controlada dia a dia
-    andamento: { 'AAAA-MM-DD': true }    // dias em que está "em andamento" (nunca junto com concluída)
-  }
-*/
-
 const ROTULOS_STATUS = { pendente: 'Pendente', andamento: 'Em andamento', concluida: 'Concluída' }
-// Clique no indicador: pendente → em andamento → concluída → pendente.
 const PROXIMO_STATUS = { pendente: 'andamento', andamento: 'concluida', concluida: 'pendente' }
 
 function chaveData(data = new Date()) {
@@ -33,7 +19,6 @@ function diaDaSemana(chave) {
   return new Date(`${chave}T12:00:00`).getDay()
 }
 
-// Mensagem amigável para falhas da API (rede, validação, sessão).
 function mensagemDe(erro) {
   return erro?.message || 'Não foi possível concluir a operação. Tente novamente.'
 }
@@ -79,7 +64,6 @@ export function iniciarTarefas() {
   let tipoAtual = 'unica'
   let diaAtual = chaveData()
 
-  /* ---------- Pop-up ---------- */
 
   DIAS_CURTOS.forEach((curto, indice) => {
     const botao = document.createElement('button')
@@ -199,7 +183,6 @@ export function iniciarTarefas() {
     renderizar()
   })
 
-  /* ---------- Lista do dia ---------- */
 
   async function excluir(tarefa) {
     if (tarefa.tipo === 'recorrente') {

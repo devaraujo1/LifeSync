@@ -1,5 +1,3 @@
-// Utilitários de datas e fusos horários (sem dependências externas).
-
 export function somarDiasData(dataStr, dias) {
   const [a, m, d] = dataStr.split('-').map(Number)
   const dt = new Date(Date.UTC(a, m - 1, d + dias))
@@ -21,7 +19,6 @@ function partesNoFuso(instante, fuso) {
   return { data: `${p.year}-${p.month}-${p.day}`, hora: `${p.hour}:${p.minute}`, segundo: p.second }
 }
 
-// Instante -> data (AAAA-MM-DD) e hora (HH:MM) no fuso informado.
 export function formatarNoFuso(instante, fuso) {
   const { data, hora } = partesNoFuso(instante, fuso)
   return { data, hora }

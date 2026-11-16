@@ -49,7 +49,6 @@ const zChecklistPut = z.object({ itens: z.array(zChecklistItem).max(50) })
 
 const hojeDe = (usuario) => formatarNoFuso(new Date(), usuario.timezone).data
 
-// Tarefas são independentes de eventos: nada aqui cria, altera ou lê eventos do calendário.
 export function criarRotasTarefas({ repos }) {
   const router = Router()
   const { tarefas } = repos

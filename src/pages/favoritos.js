@@ -57,8 +57,6 @@ let editando = null
 const normalizarTexto = (t) =>
   t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
-/* ---------- Dados da conta (API) ---------- */
-
 const textoErro = (erro) => erro?.message || 'Não foi possível concluir a operação. Tente novamente.'
 
 async function carregar() {
@@ -71,8 +69,6 @@ async function carregar() {
   }
   renderizar()
 }
-
-/* ---------- Renderização ---------- */
 
 function renderizarFiltros() {
   const categorias = categoriasEm(favoritos)
@@ -189,7 +185,6 @@ function renderizar() {
     return
   }
 
-  // Agrupa por categoria, na ordem das categorias.
   categoriasEm(favoritos).forEach((categoria) => {
     const doGrupo = visiveis.filter((f) => f.categoria === categoria)
     if (!doGrupo.length) return
@@ -231,8 +226,6 @@ document.addEventListener('keydown', (e) => {
     campoBusca.focus()
   }
 })
-
-/* ---------- Pop-up ---------- */
 
 function preencherCategorias(selecionada) {
   const categorias = categoriasEm(favoritos)

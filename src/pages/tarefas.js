@@ -155,7 +155,11 @@ async function carregar() {
     renderTagsFiltro()
     render()
   } catch (erro) {
-    board.innerHTML = `<p class="empty-tasks">${msg(erro)}</p>`
+    board.replaceChildren()
+    const p = document.createElement('p')
+    p.className = 'empty-tasks'
+    p.textContent = msg(erro)
+    board.append(p)
     mostrarAviso(msg(erro))
   }
 }
@@ -445,7 +449,6 @@ function fazerCard(t, { kanban = false } = {}) {
   return card
 }
 
-/* ---------- Kanban drag & drop (pointer: mouse + touch) ---------- */
 
 let dragState = null
 
@@ -701,7 +704,6 @@ function corrigirMenusFiltro() {
   observer.observe(filtrosEl, { subtree: true, attributes: true, attributeFilter: ['class'] })
 }
 
-// Eventos UI
 document.querySelectorAll('[data-vista]').forEach((b) => {
   b.addEventListener('click', () => {
     vista = b.dataset.vista
@@ -767,7 +769,11 @@ corrigirMenusFiltro()
 refDay.value = hojeChave()
 definirTipo('unica')
 carregar().catch((erro) => {
-  board.innerHTML = `<p class="empty-tasks">${msg(erro)}</p>`
+  board.replaceChildren()
+  const p = document.createElement('p')
+  p.className = 'empty-tasks'
+  p.textContent = msg(erro)
+  board.append(p)
 })
 
 window.addEventListener('lifesync:assistente-acao', (ev) => {

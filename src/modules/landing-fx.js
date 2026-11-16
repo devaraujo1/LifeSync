@@ -1,7 +1,3 @@
-/**
- * Parallax leve na landing: mouse (desktop) + scroll no hero visual.
- * Sem follower em touch; respeita prefers-reduced-motion.
- */
 
 const REDUZIDO = () =>
   typeof window !== 'undefined' &&

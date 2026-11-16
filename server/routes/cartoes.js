@@ -54,7 +54,6 @@ const zConsultaLancamentos = zConsultaFaturas.extend({ limite: z.coerce.number()
 const TIPO_SQL = { compra: 'purchase', estorno: 'refund', ajuste: 'adjustment' }
 const arredondar = (v) => Math.round(v * 100) / 100
 
-// `relogio` permite fixar "hoje" nos testes; em produção é o relógio real, no fuso da conta.
 export function criarRotasCartoes({ repos, relogio = () => new Date() }) {
   const router = Router()
   const { cartoes } = repos
@@ -101,9 +100,6 @@ export function criarRotasCartoes({ repos, relogio = () => new Date() }) {
       }))
     }
   }
-
-  /* ---------- Cartões ---------- */
-
   router.get('/', assincrono(async (req, res) => {
     res.json({ cartoes: await cartoes.listarCartoes(req.usuario.id) })
   }))
@@ -122,9 +118,6 @@ export function criarRotasCartoes({ repos, relogio = () => new Date() }) {
     if (!cartao) throw naoEncontrado('Cartão não encontrado.')
     res.json({ cartao })
   }))
-
-  /* ---------- Painel: cartões + resumo das faturas ---------- */
-
   router.get('/painel', assincrono(async (req, res) => {
     const userId = req.usuario.id
     const hoje = hojeDe(req.usuario)
@@ -171,9 +164,6 @@ export function criarRotasCartoes({ repos, relogio = () => new Date() }) {
       }
     })
   }))
-
-  /* ---------- Faturas ---------- */
-
   router.get('/faturas', assincrono(async (req, res) => {
     const f = validar(zConsultaFaturas, req.query)
     const hoje = hojeDe(req.usuario)
@@ -193,9 +183,6 @@ export function criarRotasCartoes({ repos, relogio = () => new Date() }) {
     const [lancamentos, pagamentos] = await Promise.all([cartoes.lancamentosDaFatura(userId, id), cartoes.pagamentosDaFatura(userId, id)])
     res.json({ fatura: comStatus(fatura, hojeDe(req.usuario)), lancamentos, pagamentos })
   }))
-
-  /* ---------- Lançamentos e consumo ---------- */
-
   router.get('/lancamentos', assincrono(async (req, res) => {
     const f = validar(zConsultaLancamentos, req.query)
     const hoje = hojeDe(req.usuario)
@@ -214,9 +201,6 @@ export function criarRotasCartoes({ repos, relogio = () => new Date() }) {
     const f = validar(z.object({ de: zData.optional(), ate: zData.optional() }), req.query)
     res.json({ consumo: await cartoes.consumo(req.usuario.id, f) })
   }))
-
-  /* ---------- Compras ---------- */
-
   router.post('/compras', assincrono(async (req, res) => {
     const userId = req.usuario.id
     const dados = validar(zCompra, req.body)
@@ -291,9 +275,6 @@ export function criarRotasCartoes({ repos, relogio = () => new Date() }) {
     }
     res.status(204).end()
   }))
-
-  /* ---------- Pagamentos de fatura ---------- */
-
   router.post('/pagamentos', assincrono(async (req, res) => {
     const userId = req.usuario.id
     const dados = validar(zPagamento, req.body)

@@ -12,7 +12,6 @@ import {
 import { abrirEvento } from './agenda-dialogo.js'
 import { calendarioApi, mudouAgenda } from '../services/calendarioApi.js'
 
-/* ---------- Agenda na página inicial ---------- */
 
 export function iniciarAgendaInicio() {
   const lista = document.querySelector('#agenda-upcoming')
@@ -80,12 +79,19 @@ export function iniciarAgendaInicio() {
 
   botaoNovo?.addEventListener('click', () => abrirEvento({ data: chaveData(), aposMudar: carregar }))
 
+  let geracaoCarregar = 0
+
   async function carregar() {
+    const geracao = ++geracaoCarregar
     try {
-      eventos = await carregarEventos()
+      const lista = await carregarEventos()
+      if (geracao !== geracaoCarregar) return
+      eventos = lista
     } catch {
+      if (geracao !== geracaoCarregar) return
       /* sem resposta: mantém o que já está na tela */
     }
+    if (geracao !== geracaoCarregar) return
     renderizar()
   }
 

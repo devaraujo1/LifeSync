@@ -1,4 +1,3 @@
-// Google simulado (OAuth + Calendar API) para os testes. Nenhuma chamada de rede real é feita.
 // Código OAuth falso: "sub|email|nonce[|sem_calendario]"
 const json = (corpo, status = 200) =>
   new Response(JSON.stringify(corpo), { status, headers: { 'Content-Type': 'application/json' } })
@@ -111,7 +110,6 @@ export function criarGoogleFalso({ clientId = 'cid-teste' } = {}) {
     fetch: fetchFalso,
     chamadas,
     tokensRevogadosPeloApp,
-    // --- manipulação do "Google" pelos testes ---
     eventos: (sub) => [...cal(sub).eventos.values()].filter((e) => e.status !== 'cancelled').map(publico),
     todos: (sub) => [...cal(sub).eventos.values()].map(publico),
     criarRemoto(sub, evento) {

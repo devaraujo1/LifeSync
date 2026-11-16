@@ -1,4 +1,3 @@
-// Utilidades de armazenamento local e de datas, compartilhadas entre os módulos.
 
 export function lerJSON(chave, padrao) {
   try {
@@ -9,7 +8,6 @@ export function lerJSON(chave, padrao) {
   }
 }
 
-// Retorna true/false para o módulo decidir se avisa o usuário.
 export function salvarJSON(chave, valor) {
   try {
     localStorage.setItem(chave, JSON.stringify(valor))
@@ -24,7 +22,6 @@ export function novoId() {
   return globalThis.crypto?.randomUUID?.() ?? `id-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
-/* ---------- Datas (sempre no fuso local, no formato AAAA-MM-DD) ---------- */
 
 export function chaveData(data = new Date()) {
   const mes = String(data.getMonth() + 1).padStart(2, '0')

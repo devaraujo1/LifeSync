@@ -1,4 +1,3 @@
-// Imagens enviadas pelo usuário: redimensionamento no navegador (perfil / personalizar).
 
 const LIMITE_ARQUIVO = 20 * 1024 * 1024
 
@@ -18,12 +17,6 @@ function carregarImagem(arquivo) {
   })
 }
 
-/**
- * Redimensiona uma imagem enviada pelo usuário.
- *  - modo 'cobrir': recorta ao centro até preencher exatamente largura × altura
- *  - modo 'conter': só reduz (nunca amplia), mantendo a proporção, dentro de largura × altura
- * Retorna { blob, largura, altura }.
- */
 export async function redimensionarImagem(arquivo, { largura, altura, modo = 'conter', qualidade = 0.86 }) {
   if (!arquivo || !arquivo.type.startsWith('image/')) {
     throw new Error('Escolha um arquivo de imagem (JPG, PNG, WebP...).')

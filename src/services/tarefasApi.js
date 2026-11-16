@@ -1,4 +1,3 @@
-// Acesso às tarefas da conta (API). As tarefas são independentes dos eventos do Google Calendar.
 import { api } from './api.js'
 
 function normalizar(t) {
@@ -54,7 +53,6 @@ export const tarefasApi = {
   }
 }
 
-// Estado de uma tarefa em um dia: 'pendente' | 'andamento' | 'concluida' (concluída vence andamento).
 export function statusDoDia(tarefa, chave) {
   if (tarefa.concluidas?.[chave]) return 'concluida'
   if (tarefa.andamento?.[chave]) return 'andamento'

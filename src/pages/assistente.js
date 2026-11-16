@@ -154,7 +154,6 @@ function renderRail() {
   }
 }
 
-// Alinhado a --bp-lg (960px) em main.css — abaixo disso = rail overlay mobile
 const mqMobile = window.matchMedia('(max-width: 959.98px)')
 const CHAVE_RAIL = 'lifesync-ai-rail-collapsed'
 
@@ -220,7 +219,6 @@ carregarConversaAtual()
 
 carregarStatusIa().then((ok) => {
   if (ok === null) {
-    // Falha de rede: não trava o chat; tenta de novo em silêncio
     setStatus('Verificando IA…')
     setTimeout(() => {
       carregarStatusIa().then((ok2) => {
@@ -375,7 +373,6 @@ async function enviarTexto(texto, { reenviar = false } = {}) {
     const r = await enviarMensagemChat({ mensagem: texto, pensar, historico, conversaId })
     visivel = msgs.contains(pensando)
     pensando.remove()
-    // Usuário trocou de conversa: a resposta já está salva na conversa de origem.
     if (!visivel) return
     if (idConversaAtual() !== conversaId) selecionarConversa(conversaId)
     historico = r.historico
@@ -418,11 +415,9 @@ async function enviarTexto(texto, { reenviar = false } = {}) {
     setStatus('Falha', { off: false })
     mostrarAviso(msg)
   } finally {
-    if (visivel) {
-      ocupado = false
-      enviar.disabled = false
-      input.focus()
-    }
+    ocupado = false
+    enviar.disabled = false
+    if (visivel) input.focus()
   }
 }
 

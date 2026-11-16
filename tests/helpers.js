@@ -23,7 +23,6 @@ export function envDeTeste(extra = {}) {
   }
 }
 
-// Banco PostgreSQL real (WASM) em memória, com as MESMAS migrações usadas em produção.
 export async function criarAmbiente({ limitar = false, env = {}, relogio, llm } = {}) {
   const pg = new PGlite()
   await aplicarMigracoes({ exec: (sql) => pg.exec(sql), rows: async (sql, p) => (await pg.query(sql, p)).rows }, PASTA_MIGRACOES)
@@ -34,7 +33,6 @@ export async function criarAmbiente({ limitar = false, env = {}, relogio, llm } 
   return { ...servidor, config, db, pg, google, fechar: () => pg.close() }
 }
 
-// Faz o fluxo de login completo (start -> callback) com o Google simulado.
 export async function entrar(app, { sub = 'sub-1', email = `${sub}@exemplo.test`, agente } = {}) {
   const agent = agente ?? request.agent(app)
   const inicio = await agent.get('/api/auth/google/start?returnTo=/financeiro.html')
@@ -46,7 +44,6 @@ export async function entrar(app, { sub = 'sub-1', email = `${sub}@exemplo.test`
   return { agent, sub, csrf: me.body.csrfToken, usuario: me.body.usuario, inicio, volta, me }
 }
 
-// Atalhos que já enviam o token CSRF.
 export function cliente({ agent, csrf }) {
   const escrever = (metodo) => (url, corpo) => agent[metodo](url).set('X-CSRF-Token', csrf).send(corpo)
   return {
@@ -58,7 +55,6 @@ export function cliente({ agent, csrf }) {
   }
 }
 
-// Autoriza o Google Calendar (fluxo separado do login).
 export async function conectarCalendario(app, sessao, { semPermissao = false } = {}) {
   const inicio = await sessao.agent.get('/api/calendario/conectar')
   const destino = new URL(inicio.headers.location)

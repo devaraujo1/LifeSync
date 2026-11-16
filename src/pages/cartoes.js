@@ -4,14 +4,7 @@ import { cartoesApi } from '../services/cartoesApi.js'
 // Mesmas regras de ciclo/parcelas do servidor (módulo puro): a prévia da tela nunca diverge do que será gravado.
 import { montarAgenda, paraCentavos } from '../../shared/cartoes.js'
 
-/*
-  Seção "Cartões de crédito" do Financeiro.
-
-  Regra financeira (a mesma do servidor): a compra é consumo no mês de cada parcela; o fechamento só consolida a
-  fatura; o pagamento da fatura é saída de caixa e não cria despesa. O consumo do cartão chega ao resto da tela
-  pelo callback `aoAlterar` (o Financeiro recarrega as despesas), e o pagamento nunca vira movimentação.
-*/
-
+// Consumo por parcela; pagamento de fatura é saída de caixa e não vira despesa (mesma regra do servidor).
 const STATUS_ROTULOS = {
   aberta: 'Aberta',
   fechada: 'Fechada',
@@ -35,8 +28,14 @@ function el(tag, classe = '', texto) {
   return e
 }
 
-const mesRotulo = (mesRef) => `${MESES[Number(mesRef.slice(5, 7)) - 1]}/${mesRef.slice(0, 4)}`
-const diaMes = (data) => `${data.slice(8, 10)}/${data.slice(5, 7)}`
+const mesRotulo = (mesRef) => {
+  if (!mesRef || mesRef.length < 7) return '—'
+  return `${MESES[Number(mesRef.slice(5, 7)) - 1] || '—'}/${mesRef.slice(0, 4)}`
+}
+const diaMes = (data) => {
+  if (!data || typeof data !== 'string' || data.length < 10) return '—'
+  return `${data.slice(8, 10)}/${data.slice(5, 7)}`
+}
 const novaChave = () => (crypto.randomUUID ? crypto.randomUUID() : `k-${Date.now()}-${Math.random().toString(36).slice(2)}`)
 
 function mensagemDe(erro) {
@@ -54,13 +53,13 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
   const filtroMes = $('#cards-filter-month')
 
   let painel = null // { hoje, cartoes, totais }
+  const hojeConta = () => painel?.hoje || hoje()
   let aba = 'faturas'
   let carregando = true
   let erro = ''
   let itens = [] // faturas ou lançamentos, conforme a aba
   const filtros = { cartao: '', status: '' }
 
-  /* ---------- Seletores (menus suspensos no padrão da página) ---------- */
 
   const selFiltroCartao = $('#cards-filter-card')
   const selFiltroStatus = $('#cards-filter-status')
@@ -75,7 +74,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
   })
   const menuFiltroStatus = criarSeletorCategoria({ select: selFiltroStatus, placeholder: 'Todos os status' })
 
-  /* ---------- Dados ---------- */
 
   let geracaoCarregar = 0
 
@@ -105,7 +103,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     renderTudo()
   }
 
-  // Depois de qualquer escrita: recarrega a seção e avisa o Financeiro (o consumo muda as despesas do mês).
   async function aposAlterar() {
     await carregar()
     aoAlterar?.()
@@ -114,7 +111,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
   const cartaoPorId = (id) => painel?.cartoes.find((c) => c.id === id)
   const cartoesAtivos = () => (painel?.cartoes ?? []).filter((c) => c.ativo)
 
-  /* ---------- Renderização ---------- */
 
   function chipStatus(status) {
     return el('span', `inv-status is-${status}`, STATUS_ROTULOS[status] ?? status)
@@ -359,7 +355,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     menuFiltroCartao.atualizar()
     selFiltroStatus.value = filtros.status
     menuFiltroStatus.atualizar()
-    // Status é uma propriedade da fatura; em "Lançamentos" ele filtra pela fatura de cada parcela.
   }
 
   function renderTudo() {
@@ -369,7 +364,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     renderConteudo()
   }
 
-  /* ---------- Filtros e abas ---------- */
 
   abas.forEach((botao) =>
     botao.addEventListener('click', () => {
@@ -395,7 +389,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     carregar()
   })
 
-  /* ---------- Cartão (cadastro/edição) ---------- */
 
   const dlgCartao = $('#card-dialog')
   const formCartao = $('#card-form')
@@ -479,7 +472,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
 
   $('#card-new').addEventListener('click', () => abrirCartao())
 
-  /* ---------- Compra / estorno / ajuste ---------- */
 
   const dlgCompra = $('#purchase-dialog')
   const formCompra = $('#purchase-form')
@@ -536,7 +528,8 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     const valor = Number(campoValor.value)
     const opcoes = []
     for (let n = 1; n <= 48; n++) {
-      const parcela = valor > 0 && valor * 100 >= n ? ` de ${formatarMoeda(Math.floor(paraCentavos(valor) / n) / 100)}` : ''
+      const centavos = paraCentavos(valor)
+      const parcela = valor > 0 && centavos >= n ? ` de ${formatarMoeda(Math.floor(centavos / n) / 100)}` : ''
       opcoes.push(new Option(n === 1 ? `À vista${valor > 0 ? ` · ${formatarMoeda(valor)}` : ''}` : `${n}×${parcela}`, String(n)))
     }
     selParcelas.replaceChildren(...opcoes)
@@ -549,7 +542,7 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     const cartao = cartaoPorId(selCartao.value)
     const valor = Number(campoValor.value)
     const parcelas = tipoCompra === 'compra' ? Number(selParcelas.value) || 1 : 1
-    if (!cartao || !(valor > 0) || !campoData.value || valor * 100 < parcelas) return
+    if (!cartao || !(valor > 0) || !campoData.value || paraCentavos(valor) < parcelas) return
 
     const { itens: parcelasCalc, ciclos } = montarAgenda({
       data: campoData.value,
@@ -611,7 +604,7 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
 
     campoDescricao.value = lancamento?.descricao ?? ''
     campoValor.value = lancamento ? String(Math.abs(lancamento.valorTotal)) : ''
-    campoData.value = lancamento?.dataCompra ?? hoje()
+    campoData.value = lancamento?.dataCompra ?? hojeConta()
     selSentido.value = lancamento && lancamento.valorTotal < 0 ? 'credito' : 'cobranca'
     menuSentido.atualizar()
 
@@ -624,7 +617,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     if (lancamento?.categoria) selCategoria.value = lancamento.categoria
     menuCategoria.atualizar()
 
-    // Tipo não muda na edição (compra continua compra); só o texto e os valores.
     botoesTipo.forEach((b) => (b.disabled = editar && b.dataset.kind !== (lancamento?.tipo ?? 'compra')))
     definirTipoCompra(lancamento?.tipo ?? 'compra')
     dlgCompra.showModal()
@@ -645,7 +637,7 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
       tipo: tipoCompra,
       descricao: campoDescricao.value.trim(),
       categoria: selCategoria.value,
-      valor: Math.round(valor * 100) / 100,
+      valor: paraCentavos(valor) / 100,
       parcelas,
       data: campoData.value
     }
@@ -654,7 +646,7 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     if (!dados.cartaoId) return (erroCompra.textContent = 'Escolha um cartão.')
     if (!dados.descricao) return (erroCompra.textContent = 'Informe a descrição.')
     if (!(valor > 0)) return (erroCompra.textContent = 'Informe um valor maior que zero.')
-    if (valor * 100 < parcelas) return (erroCompra.textContent = 'O valor é pequeno demais para esse número de parcelas.')
+    if (paraCentavos(valor) < parcelas) return (erroCompra.textContent = 'O valor é pequeno demais para esse número de parcelas.')
     if (!dados.data) return (erroCompra.textContent = 'Informe a data.')
     if (!dados.categoria) return (erroCompra.textContent = 'Escolha uma categoria.')
 
@@ -662,7 +654,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     enviar.disabled = true // evita envio duplo; a chave também protege contra repetição no servidor
     try {
       if (compraEditando) {
-        // Só texto mudou: não mexe em parcelas nem exige fatura sem pagamentos.
         const o = compraEditando
         const mudouValores =
           dados.cartaoId !== o.cartaoId ||
@@ -697,7 +688,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     await aposAlterar()
   }
 
-  /* ---------- Pagamento de fatura ---------- */
 
   const dlgPagamento = $('#payment-dialog')
   const formPagamento = $('#payment-form')
@@ -740,7 +730,7 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     }
     campoPago.value = String(f.pendente)
     campoPago.max = String(f.pendente)
-    campoDataPag.value = hoje()
+    campoDataPag.value = hojeConta()
     if (dlgCompra.open) dlgCompra.close()
     if ($('#invoice-dialog').open) $('#invoice-dialog').close()
     dlgPagamento.showModal()
@@ -748,7 +738,13 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     campoPago.select()
   }
 
-  const fecharPagamento = () => dlgPagamento.close()
+  const fecharPagamento = () => {
+    faturaPagando = null
+    dlgPagamento.close()
+  }
+  dlgPagamento.addEventListener('close', () => {
+    faturaPagando = null
+  })
   $('#payment-cancel').addEventListener('click', fecharPagamento)
   $('#payment-cancel-x').addEventListener('click', fecharPagamento)
   $('#payment-full').addEventListener('click', () => {
@@ -757,6 +753,7 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
 
   formPagamento.addEventListener('submit', async (e) => {
     e.preventDefault()
+    if (!faturaPagando) return
     const valor = Math.round(Number(campoPago.value) * 100) / 100
     if (!(valor > 0)) return (erroPagamento.textContent = 'Informe um valor maior que zero.')
     if (valor > faturaPagando.pendente) return (erroPagamento.textContent = `O valor passa do saldo pendente (${formatarMoeda(faturaPagando.pendente)}).`)
@@ -777,7 +774,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     await aposAlterar()
   })
 
-  /* ---------- Detalhes da fatura ---------- */
 
   const dlgFatura = $('#invoice-dialog')
 
@@ -878,7 +874,6 @@ export function iniciarCartoes({ categorias, formatarMoeda, formatarData, mostra
     dlgFatura.showModal()
   }
 
-  /* ---------- Início ---------- */
 
   renderTudo()
   carregar()

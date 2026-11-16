@@ -1,6 +1,3 @@
-// Aplica as migrações em db/migrations no banco apontado por DATABASE_URL.
-//   npm run migrate
-// Usa WebSocket (Pool do Neon) porque o modo HTTP não aceita scripts com várias instruções.
 import { fileURLToPath } from 'node:url'
 import { Pool, neonConfig } from '@neondatabase/serverless'
 import { aplicarMigracoes } from '../server/db/migrator.js'

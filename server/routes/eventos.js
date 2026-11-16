@@ -34,7 +34,6 @@ export const zEvento = z
     excecoes: e.rec.tipo === 'nenhuma' ? [] : [...new Set(e.excecoes)].sort()
   }))
 
-// Campos que o cliente pode alterar (qualquer subconjunto).
 const zParcial = z
   .object({
     titulo: z.any(), data: z.any(), diaInteiro: z.any(), inicio: z.any(), fim: z.any(),
@@ -45,8 +44,7 @@ const zParcial = z
 const SOMENTE_LEITURA =
   'Este evento tem uma recorrência do Google Calendar que o dashboard não consegue representar. Edite-o no Google Calendar.'
 
-// Eventos são independentes das tarefas. A propagação ao Google nunca bloqueia a gravação local:
-// se falhar, o evento fica "pending" e é reenviado na próxima sincronização.
+// Falha no Google não bloqueia gravação local: evento fica "pending" até a próxima sincronização.
 export function criarRotasEventos({ repos, calendario }) {
   const router = Router()
   const { eventos } = repos

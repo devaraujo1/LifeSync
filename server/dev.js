@@ -1,4 +1,3 @@
-// API local para desenvolvimento: `npm run dev:api` (o Vite encaminha /api para esta porta).
 import { obterServidor } from './index.js'
 
 const porta = Number(process.env.API_PORT ?? 3001)

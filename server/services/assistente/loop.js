@@ -15,13 +15,20 @@ function normalizarHistorico(historico) {
     .slice(-MAX_HISTORICO)
     .map((m) => {
       const role = m?.role === 'assistant' ? 'assistant' : 'user'
-      const content = String(m?.content ?? '').slice(0, MAX_CHARS_MSG)
+      let content = String(m?.content ?? '').slice(0, MAX_CHARS_MSG)
+      // Turns `assistant` vêm do cliente — truncar e limpar tentativas de prompt injection.
+      if (role === 'assistant') {
+        content = content
+          .replace(/\[Regra LifeSync[\s\S]*$/i, '')
+          .replace(/^\s*(system|developer)\s*:/gim, '')
+          .slice(0, 800)
+          .trim()
+      }
       return content ? { role, content } : null
     })
     .filter(Boolean)
 }
 
-/** Mensagem curta alinhada ao card — evita texto longo listando vários itens. */
 export function respostaComPrevia(_texto, precisaConfirmacao) {
   if (!precisaConfirmacao) return String(_texto || '').trim() || 'Pronto.'
   const resumo = String(precisaConfirmacao.resumo || '')
@@ -31,10 +38,6 @@ export function respostaComPrevia(_texto, precisaConfirmacao) {
   return MSG_PREVIA
 }
 
-/**
- * Loop agnóstico: provider.chat → tools → provider…
- * @param {{ provider, repos, calendario, usuario, mensagem, historico?, pensar?, agora?, model?, modelPensar? }} opts
- */
 export async function executarLoopAssistente(opts) {
   const {
     provider,

@@ -15,10 +15,15 @@ export function criarProvedorIa(config, { fetchImpl = fetch } = {}) {
 
 export function statusIa(config) {
   const ia = config.ia ?? {}
+  const model = (ia.model || 'gemini-3.5-flash-lite').trim()
+  const modelPensar = (ia.modelPensar || 'gemini-3.8-flash').trim()
+  // Modelos vazios ou placeholder óbvios → sinaliza no /status (evita 404 silencioso no chat).
+  const modeloSuspeito = (m) => !m || /modelo|changeme|todo|example/i.test(m)
   return {
     configurado: Boolean(ia.apiKey),
     provider: ia.provider || 'gemini',
-    model: ia.model || 'gemini-3.5-flash-lite',
-    modelPensar: ia.modelPensar || 'gemini-3.8-flash'
+    model,
+    modelPensar,
+    modelosOk: !modeloSuspeito(model) && !modeloSuspeito(modelPensar)
   }
 }

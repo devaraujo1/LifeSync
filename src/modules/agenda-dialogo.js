@@ -10,8 +10,6 @@ import {
 import { mostrarAviso } from './shell.js'
 import { criarSeletorCategoria } from './seletor-categoria.js'
 
-/* Pop-up de criação e edição de eventos, compartilhado pela página inicial e pela agenda. */
-
 let dialogo = null
 let refs = null
 let contexto = null
@@ -187,12 +185,6 @@ function atualizarCampos() {
   refs.rotuloData.textContent = repete ? 'Data de início' : 'Data'
 }
 
-/**
- * Abre o pop-up.
- *  - evento: edita este evento (ocorrencia = data clicada, para "excluir só esta")
- *  - data: cria um novo evento nesta data
- *  - aposMudar: chamado depois de salvar ou excluir
- */
 export function abrirEvento({ evento = null, data = chaveData(), ocorrencia = null, aposMudar = () => {} }) {
   montar()
   contexto = { evento, ocorrencia, aposMudar }
@@ -220,7 +212,6 @@ export function abrirEvento({ evento = null, data = chaveData(), ocorrencia = nu
   refs.excluirUma.hidden = !(recorrente && ocorrencia)
   refs.notaSerie.hidden = !recorrente
 
-  // Situação no Google Calendar (quando conectado) e evento somente leitura.
   const sync = evento?.sincronizacao
   const somenteLeitura = Boolean(sync?.somenteLeitura)
   refs.salvar.disabled = somenteLeitura
@@ -243,7 +234,6 @@ export function abrirEvento({ evento = null, data = chaveData(), ocorrencia = nu
   refs.titulo.focus()
 }
 
-// Desabilita os botões de ação enquanto a API responde (evita envio duplo).
 function ocupado(sim) {
   ;[refs.salvar, refs.excluir, refs.excluirUma].forEach((b) => {
     b.dataset.ocupado = sim ? '1' : ''
@@ -294,7 +284,7 @@ async function salvar(e) {
   try {
     if (evento) {
       // Exceções anteriores à nova data de início deixam de fazer sentido.
-      await eventosApi.atualizar(evento.id, { ...dados, excecoes: evento.excecoes.filter((d) => d >= data) })
+      await eventosApi.atualizar(evento.id, { ...dados, excecoes: (evento.excecoes ?? []).filter((d) => d >= data) })
     } else {
       await eventosApi.criar(dados)
     }
@@ -340,7 +330,7 @@ async function excluirOcorrencia() {
   const { evento, ocorrencia, aposMudar } = contexto
   ocupado(true)
   try {
-    await eventosApi.atualizar(evento.id, { excecoes: [...new Set([...evento.excecoes, ocorrencia])] })
+    await eventosApi.atualizar(evento.id, { excecoes: [...new Set([...(evento.excecoes ?? []), ocorrencia])] })
   } catch (falha) {
     ocupado(false)
     return erro(textoErro(falha))

@@ -1,5 +1,3 @@
-// Conversão entre o modelo de evento do LifeSync e o recurso "Event" do Google Calendar.
-// Funções puras (sem rede nem banco), cobertas por testes.
 import { formatarNoFuso, hhmmDe, minutosDe, paredeParaUTC, somarDiasData } from '../lib/dates.js'
 
 export const CATEGORIAS = ['pessoal', 'trabalho', 'estudos', 'saude', 'lazer']
@@ -17,8 +15,6 @@ function formatoUTC(data) {
     `T${doisDig(data.getUTCHours())}${doisDig(data.getUTCMinutes())}${doisDig(data.getUTCSeconds())}Z`
   )
 }
-
-/* ---------- LifeSync -> Google ---------- */
 
 function fimDoEvento(e) {
   const inicio = minutosDe(e.inicio)
@@ -78,8 +74,6 @@ export function paraGoogle(e, fuso, { novo = false } = {}) {
 // e como é determinístico, repetir o envio não cria duplicata (o Google responde 409).
 export const googleIdDe = (uuid) => uuid.replaceAll('-', '').toLowerCase()
 
-/* ---------- Google -> LifeSync ---------- */
-
 function paraInstante(info, fusoPadrao) {
   const texto = info.dateTime
   if (/(?:[zZ]|[+-]\d{2}:\d{2})$/.test(texto)) return new Date(texto)
@@ -88,7 +82,6 @@ function paraInstante(info, fusoPadrao) {
 }
 
 function dataDeValor(valor, fuso) {
-  // 20261021, 20261021T093000 ou 20261021T123000Z
   const m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})(Z)?)?$/.exec(valor)
   if (!m) return null
   if (m[7]) return formatarNoFuso(new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])), fuso).data

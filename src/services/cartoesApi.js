@@ -10,7 +10,6 @@ const consulta = (filtros = {}) => {
 // Cartões de crédito. Valores monetários chegam como número com 2 casas; as contas (parcelas, faturas,
 // status) são feitas no servidor.
 export const cartoesApi = {
-  // { hoje, cartoes: [{ ..., faturaAtual }], totais: { aPagar, vencidas, disponivel, pagoNoMes, proximoVencimento... } }
   painel: () => api.get('/cartoes/painel'),
   async criarCartao(dados) {
     return (await api.post('/cartoes', dados)).cartao
@@ -21,12 +20,10 @@ export const cartoesApi = {
   async faturas(filtros) {
     return (await api.get(`/cartoes/faturas${consulta(filtros)}`)).faturas
   },
-  // { fatura, lancamentos, pagamentos }
   fatura: (id) => api.get(`/cartoes/faturas/${encodeURIComponent(id)}`),
   async lancamentos(filtros) {
     return (await api.get(`/cartoes/lancamentos${consulta(filtros)}`)).lancamentos
   },
-  // Consumo do cartão no formato das movimentações do Financeiro (uma despesa por parcela).
   async consumo() {
     return (await api.get('/cartoes/consumo')).consumo
   },

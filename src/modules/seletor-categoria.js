@@ -1,25 +1,6 @@
 import { icon } from './icons.js'
 
-/*
-  Menu suspenso de categorias (substitui a lista nativa do <select>, que o navegador desenha como quiser).
-
-  O <select> original continua no documento, escondido, como fonte do valor: o restante da tela segue lendo
-  `select.value` e as opções continuam sendo preenchidas por quem usa o componente. Depois de mudar as opções,
-  chame `atualizar()`.
-
-  Opções:
-    select        <select> que guarda o valor
-    iconeDe(valor)  nome do ícone da opção (opcional: sem ele a lista não mostra ícones)
-    corDe(valor)    cor (hex) do ícone da opção (opcional)
-    podeRemover(valor)  true para opções que o usuário pode apagar (mostram o botão de remover)
-    aoCriar(nome)       async; cria uma opção e devolve o valor final (lança Error com a mensagem a exibir).
-                        Sem ele, o rodapé "Nova categoria" não aparece (uso como lista simples).
-    aoRemover(valor)    async; remove a opção (lança Error com a mensagem a exibir)
-    rotuloNova          texto do botão de criação (padrão: "Nova categoria")
-    placeholder         texto quando nada está selecionado
-  O rótulo mostrado é o texto da <option>; o valor é o `value` dela.
-*/
-
+// <select> nativo fica escondido; o restante da tela lê select.value (chame atualizar() após mudar opções).
 let contador = 0
 
 export function criarSeletorCategoria({
@@ -200,8 +181,6 @@ export function criarSeletorCategoria({
     if (mudou) select.dispatchEvent(new Event('change', { bubbles: true }))
   }
 
-  /* ---------- Nova categoria ---------- */
-
   function abrirNova() {
     botaoNova.hidden = true
     formNova.hidden = false
@@ -258,7 +237,6 @@ export function criarSeletorCategoria({
     }
   }
 
-  // Lista simples: sem criação de opções, o rodapé inteiro some.
   if (!aoCriar) raiz.querySelector('.cat-footer').hidden = true
   else raiz.classList.add('has-create')
 
@@ -279,8 +257,6 @@ export function criarSeletorCategoria({
       gatilho.focus()
     }
   })
-
-  /* ---------- Interação com o gatilho ---------- */
 
   gatilho.addEventListener('click', () => (aberto() ? fechar() : abrir()))
 
@@ -341,7 +317,6 @@ export function criarSeletorCategoria({
     if (aberto() && !raiz.contains(e.target)) fechar()
   })
 
-  // Quem mudar `select.value` por código pode chamar atualizar() para refletir aqui.
   select.addEventListener('change', sincronizarGatilho)
 
   function atualizar() {

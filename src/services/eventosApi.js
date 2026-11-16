@@ -1,4 +1,3 @@
-// Eventos da agenda da conta (API). A propagação ao Google Calendar é feita pelo servidor.
 import { api } from './api.js'
 
 export const eventosApi = {

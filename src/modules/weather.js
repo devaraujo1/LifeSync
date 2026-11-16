@@ -1,11 +1,9 @@
-// Clima via Open-Meteo (gratuito, sem chave).
 import { EVENTO, lerPreferencias } from './preferencias.js'
 
 const CACHE_KEY = 'lifesync-clima-v2'
 const VALIDADE_MS = 30 * 60 * 1000
 const LIMITE_CHUVA = 30 // % mínima para avisar de chuva
 
-// [ícone, descrição]
 function descrever(codigo, dia) {
   if (codigo === 0) return dia ? ['sun', 'Céu limpo'] : ['moon', 'Céu limpo']
   if (codigo === 1) return dia ? ['sun', 'Quase limpo'] : ['moon', 'Quase limpo']
@@ -24,7 +22,6 @@ function descrever(codigo, dia) {
 const paraF = (c) => (c * 9) / 5 + 32
 const formatarTemp = (c, unidade) => `${Math.round(unidade === 'F' ? paraF(c) : c)}°${unidade === 'F' ? 'F' : 'C'}`
 
-/* ---------- Busca de cidade (geocodificação) ---------- */
 
 export async function buscarCidade(nome) {
   const url =
@@ -41,7 +38,6 @@ export async function buscarCidade(nome) {
   return { nome: rotulo, lat: Number(r.latitude.toFixed(2)), lon: Number(r.longitude.toFixed(2)) }
 }
 
-/* ---------- Dados ---------- */
 
 function lerCache(chave) {
   try {
@@ -71,7 +67,6 @@ async function obterCoordenadas(cidade) {
   if (cidade) return { lat: cidade.lat, lon: cidade.lon }
   if (!('geolocation' in navigator)) throw new Error('Sem geolocalização')
 
-  // Se a permissão já foi negada, não insiste a cada nova aba.
   const permissao = await navigator.permissions?.query({ name: 'geolocation' }).catch(() => null)
   if (permissao?.state === 'denied') throw new Error('Permissão negada')
 
@@ -113,7 +108,6 @@ function resumir(dados) {
   }
 }
 
-/* ---------- Exibição ---------- */
 
 function exibir(dados, prefs) {
   const raiz = document.querySelector('#weather')
@@ -180,7 +174,6 @@ export async function iniciarClima() {
   const iniciar = () => (carregando = carregar().finally(() => (carregando = null)))
   iniciar()
 
-  // Trocar unidade, cidade ou visibilidade nas preferências atualiza na hora.
   let anterior = JSON.stringify(lerPreferencias().clima)
   window.addEventListener(EVENTO, () => {
     const atual = JSON.stringify(lerPreferencias().clima)
@@ -191,7 +184,6 @@ export async function iniciarClima() {
     else exibir(dados, lerPreferencias())
   })
 
-  // Atualiza a previsão a cada 30 minutos com a aba aberta.
   setInterval(() => {
     if (!carregando) iniciar()
   }, VALIDADE_MS)

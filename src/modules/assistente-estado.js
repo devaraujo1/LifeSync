@@ -1,6 +1,5 @@
 import { escapar } from './assistente-chat.js'
 
-/** Bolha animada “Pensando…” */
 export function elPensando({ pensar = false } = {}) {
   const el = document.createElement('div')
   el.className = 'assistente-msg assistente-msg-assistant is-thinking'
@@ -12,7 +11,6 @@ export function elPensando({ pensar = false } = {}) {
   return el
 }
 
-/** Bolha de erro com botão Tentar de novo */
 export function elErro(mensagem, { podeTentar = true } = {}) {
   const el = document.createElement('div')
   el.className = 'assistente-msg assistente-msg-assistant is-error'
@@ -66,7 +64,7 @@ export function mensagemErroAmigavel(erro) {
 const ERRO_UI_KEY = 'lifesync-assistente-erro-ui'
 const RETRY_UI_KEY = 'lifesync-assistente-retry-ui'
 
-/** Mantém o último erro visível mesmo se a lista de mensagens for re-renderizada. */
+// Mantém o último erro visível mesmo se a lista de mensagens for re-renderizada.
 export function salvarErroUi(texto, textoRetry = '') {
   try {
     if (!texto) {

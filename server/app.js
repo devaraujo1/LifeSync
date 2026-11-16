@@ -16,8 +16,6 @@ import { criarRotasFavoritos } from './routes/favoritos.js'
 import { criarRotasEventos } from './routes/eventos.js'
 import { criarRotasAssistente } from './routes/assistente.js'
 
-// Fábrica do app: banco, config e cliente Google são injetados (produção usa Neon; testes usam PGlite e Google simulado).
-// `llm` opcional: provedor IA mock/injetado (testes); senão usa AI_* do config.
 export function criarApp({ config, db, fetchImpl, limitar = true, atrasosRede, relogio, llm }) {
   const repos = criarRepositorios(db)
   const google = criarClienteGoogle({ config, fetchImpl, atrasos: atrasosRede })
@@ -30,7 +28,6 @@ export function criarApp({ config, db, fetchImpl, limitar = true, atrasosRede, r
   api.use(express.json({ limit: '2mb' }))
   api.use(carregarSessao({ config, repos }))
 
-  // Públicas (a própria rota verifica sessão quando precisa)
   api.get('/saude', (_req, res) => res.json({ ok: true }))
   api.use('/auth', criarRotasAuth({ config, repos, google, limites }))
   const cal = criarRotasCalendario({ config, repos, google, calendario, limites })

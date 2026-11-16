@@ -34,7 +34,6 @@ let visivel = { ano: Number(selecionado.slice(0, 4)), mes: Number(selecionado.sl
 const doisDigitos = (n) => String(n).padStart(2, '0')
 const montarChave = (ano, mes, dia) => `${ano}-${doisDigitos(mes)}-${doisDigitos(dia)}`
 
-/* ---------- Calendário ---------- */
 
 function renderizarCabecalho() {
   const inicio = lerPreferencias().inicioSemana
@@ -121,7 +120,6 @@ grade.addEventListener('click', (e) => {
   if (celula) selecionar(celula.dataset.data)
 })
 
-// Setas navegam pelos dias; PageUp/PageDown trocam o mês.
 grade.addEventListener('keydown', (e) => {
   const passos = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }
   if (e.key in passos) {
@@ -151,7 +149,6 @@ document.querySelector('#cal-prev').addEventListener('click', () => mudarMes(-1)
 document.querySelector('#cal-next').addEventListener('click', () => mudarMes(1))
 document.querySelector('#cal-today').addEventListener('click', () => selecionar(chaveData()))
 
-/* ---------- Compromissos do dia ---------- */
 
 function renderizarDia() {
   const d = dataDeChave(selecionado)
@@ -227,7 +224,6 @@ document.querySelector('#day-add').addEventListener('click', () =>
   abrirEvento({ data: selecionado, aposMudar: recarregar })
 )
 
-/* ---------- Atualização ---------- */
 
 function renderizar() {
   renderizarGrade()
@@ -254,7 +250,6 @@ async function recarregar(dataNova) {
   renderizar()
 }
 
-// Mudar o início da semana nas preferências redesenha o calendário.
 window.addEventListener(EVENTO, () => {
   renderizarCabecalho()
   renderizar()

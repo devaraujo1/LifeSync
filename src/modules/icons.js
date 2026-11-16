@@ -1,4 +1,3 @@
-// Ícones minimalistas (traço 1.6px, estilo Lucide) em um único sprite SVG.
 const ICONS = {
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   'chevron-right': '<path d="m9 6 6 6-6 6"/>',

@@ -24,8 +24,12 @@ const zPreferencias = z
     cartoes: z
       .record(z.string().regex(/^[a-z0-9-]{1,40}$/), z.boolean())
       .refine((o) => Object.keys(o).length <= 30, 'Cartões demais.'),
-    // Foto de perfil já reduzida pelo navegador (data URL).
-    foto: z.string().startsWith('data:image/').max(600000).nullable()
+    // Foto de perfil já reduzida pelo navegador (data URL). Sem SVG (XSS).
+    foto: z
+      .string()
+      .regex(/^data:image\/(jpeg|png|webp);base64,/i, 'Use JPEG, PNG ou WebP.')
+      .max(600000)
+      .nullable()
   })
   .partial()
 

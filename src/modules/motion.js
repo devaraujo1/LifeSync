@@ -1,7 +1,3 @@
-/**
- * Motion LifeSync: entrada do hero + reveal no scroll.
- * Respeita prefers-reduced-motion.
- */
 
 const REDUZIDO = () =>
   typeof window !== 'undefined' &&

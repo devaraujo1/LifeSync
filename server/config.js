@@ -11,7 +11,6 @@ function origemDe(url) {
   }
 }
 
-// Lê e valida o ambiente. Em produção, configuração incompleta impede a inicialização (falha cedo).
 export function carregarConfig(env = process.env) {
   const producao = env.NODE_ENV === 'production'
   const appUrl = (env.APP_URL ?? '').replace(/\/+$/, '')
@@ -55,7 +54,9 @@ export function carregarConfig(env = process.env) {
       ociosaSeg: 60 * 60 * 24 * 14, // 14 dias sem uso
       absolutaSeg: 60 * 60 * 24 * 30 // 30 dias no máximo
     },
-    cookieOAuth: producao ? '__Host-oauth_tx' : 'oauth_tx',
+    // Cookies OAuth separados: login e calendário não se sobrescrevem se abertos em paralelo.
+    cookieOAuthLogin: producao ? '__Host-oauth_login' : 'oauth_login',
+    cookieOAuthCal: producao ? '__Host-oauth_cal' : 'oauth_cal',
     // Assistente IA (provedor plugável). Sem chave o chat responde 503 — o resto do app segue.
     // Chave: AI_API_KEY (agnóstico) ou aliases oficiais Gemini: GOOGLE_API_KEY > GEMINI_API_KEY.
     ia: {

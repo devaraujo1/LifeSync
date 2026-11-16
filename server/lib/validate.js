@@ -28,8 +28,6 @@ export function dataValida(texto) {
   return data.getUTCFullYear() === a && data.getUTCMonth() === m - 1 && data.getUTCDate() === d
 }
 
-/* ---------- Blocos reutilizáveis de schema ---------- */
-
 export const zData = z.string().refine(dataValida, 'Data inválida (use AAAA-MM-DD).')
 export const zHora = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora inválida (use HH:MM).')
 export const zDiasSemana = z
@@ -37,7 +35,6 @@ export const zDiasSemana = z
   .max(7)
   .transform((dias) => [...new Set(dias)].sort((a, b) => a - b))
 
-// Dinheiro: positivo, no máximo 2 casas decimais após arredondar.
 export const zValor = z
   .number({ invalid_type_error: 'Valor inválido.' })
   .finite()
@@ -57,7 +54,6 @@ export const zUrlHttp = z
     }
   }, 'URL inválida (somente http e https).')
 
-// Strings sem espaços nas pontas e sem caracteres de controle.
 export const zTexto = (min, max) =>
   z
     .string()

@@ -23,7 +23,7 @@ export function criarRotasCalendario({ config, repos, google, calendario, limite
       { tipo: 'calendario', userId: req.usuario.id, state, nonce, verificador, exp: Date.now() + 10 * 60_000 },
       config.sessionSecret
     )
-    definirCookie(res, config.cookieOAuth, tx, { ...cookieOpts, maxAgeSeg: 600 })
+    definirCookie(res, config.cookieOAuthCal, tx, { ...cookieOpts, maxAgeSeg: 600 })
     res.redirect(
       302,
       google.montarUrlAutorizacao({
@@ -41,8 +41,8 @@ export function criarRotasCalendario({ config, repos, google, calendario, limite
   publico.get(
     '/callback',
     assincrono(async (req, res) => {
-      const tx = verificarAssinatura(req.cookies?.[config.cookieOAuth], config.sessionSecret)
-      limparCookie(res, config.cookieOAuth, cookieOpts)
+      const tx = verificarAssinatura(req.cookies?.[config.cookieOAuthCal], config.sessionSecret)
+      limparCookie(res, config.cookieOAuthCal, cookieOpts)
       const voltar = (motivo) => res.redirect(302, `${config.appUrl}/agenda.html?calendario=${motivo}`)
 
       if (!req.usuario) return res.redirect(302, `${config.appUrl}/?erro_login=sessao_expirada`)

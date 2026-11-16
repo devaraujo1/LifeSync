@@ -14,7 +14,8 @@ import {
   consumirPendencia,
   descartarPendencia,
   guardarPendencia,
-  lerPendencia
+  lerPendencia,
+  restaurarPendencia
 } from '../services/assistente/pendentes.js'
 
 const zChat = z.object({
@@ -154,20 +155,38 @@ export function criarRotasAssistente({ config, repos, calendario, limites, llm }
       if (!pendente) throw requisicaoInvalida('Confirmação expirada ou inválida.')
 
       const ctx = ctxReq(req)
-      if (pendente.kind === 'escrita') {
-        const r = await executarEscritaConfirmada({ tool: pendente.tool, args: pendente.args }, ctx)
-        res.json({
-          ok: true,
-          kind: 'escrita',
-          resumo: r.resumo,
-          area: r.acao?.area ?? null,
-          acao: r.acao ?? null
-        })
-        return
-      }
+      try {
+        if (pendente.kind === 'escrita') {
+          const r = await executarEscritaConfirmada({ tool: pendente.tool, args: pendente.args }, ctx)
+          res.json({
+            ok: true,
+            kind: 'escrita',
+            resumo: r.resumo,
+            area: r.acao?.area ?? null,
+            acao: r.acao ?? null
+          })
+          return
+        }
 
-      const r = await executarExclusaoConfirmada({ tipo: pendente.tipo, id: pendente.id }, ctx)
-      res.json({ ok: true, kind: 'exclusao', resumo: r.resumo, area: r.area })
+        const r = await executarExclusaoConfirmada({ tipo: pendente.tipo, id: pendente.id }, ctx)
+        res.json({ ok: true, kind: 'exclusao', resumo: r.resumo, area: r.area })
+      } catch (erro) {
+        await restaurarPendencia({
+          confirmId: pendente.confirmId || confirmId,
+          userId: req.usuario.id,
+          kind: pendente.kind,
+          tipo: pendente.tipo,
+          id: pendente.id,
+          tool: pendente.tool,
+          args: pendente.args,
+          preview: pendente.preview,
+          resumo: pendente.resumo,
+          secret: config.sessionSecret,
+          repos,
+          expiraEm: pendente.expiraEm
+        }).catch(() => {})
+        throw erro
+      }
     })
   )
 

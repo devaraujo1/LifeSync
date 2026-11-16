@@ -16,7 +16,6 @@ import { buscarCidade } from './weather.js'
 import { usuarioLogado } from '../services/api.js'
 import { encerrarSessao } from '../services/conta.js'
 
-/* Formulário de conta, perfil, aparência e preferências — usado em personalizar.html. */
 
 function segmentado(nome, opcoes) {
   const botoes = opcoes

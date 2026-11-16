@@ -1,6 +1,4 @@
-// Painel de conexão com o Google Calendar na página da Agenda.
-// (A sincronização não é instantânea: acontece ao abrir a agenda, ao voltar para a aba, após cada alteração
-// feita aqui e, no servidor, a cada 15 minutos. Isso não é mais explicado na tela.)
+// Sincronização com Google Calendar não é instantânea (abertura da aba, alterações locais, servidor ~15 min).
 import { calendarioApi, URL_CONECTAR, mudouAgenda } from '../services/calendarioApi.js'
 import { mostrarAviso } from './shell.js'
 
@@ -127,7 +125,6 @@ export function iniciarPainelGoogle({ aoSincronizar }) {
     }
   }
 
-  // Retorno do fluxo de autorização do Google (?calendario=...).
   async function tratarRetorno() {
     const url = new URL(window.location.href)
     const codigo = url.searchParams.get('calendario')

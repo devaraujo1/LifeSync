@@ -37,6 +37,7 @@ describe('ciclos e parcelas (regras puras)', () => {
     expect(dividirEmParcelas(10000, 3)).toEqual([3333, 3333, 3334])
     expect(dividirEmParcelas(-1000, 3)).toEqual([-333, -333, -334])
     expect(dividirEmParcelas(1, 1)).toEqual([1])
+    expect(dividirEmParcelas(100, 0)).toEqual([100])
     for (const [total, n] of [[99999, 7], [1234567, 12], [100, 48]]) {
       expect(dividirEmParcelas(total, n).reduce((s, v) => s + v, 0)).toBe(total)
     }

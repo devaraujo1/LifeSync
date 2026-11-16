@@ -6,7 +6,7 @@ export const PENSAR_KEY = 'lifesync-assistente-pensar'
 export const MAX_HIST = 20
 export const MAX_CONVERSAS = 40
 export const EVENTO_CONVERSAS = 'lifesync:assistente-conversas'
-/** Evita bolha “Pensando…” infinita se a IA travar */
+// Evita bolha “Pensando…” infinita se a IA travar
 export const CHAT_TIMEOUT_MS = 90_000
 
 function idNovo() {
@@ -85,6 +85,13 @@ function salvarStore(store) {
       )
     }
   }
+}
+
+// Outra aba gravou o histórico: avisa a UI para reler (evita clobber silencioso na próxima escrita).
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key === STORE_KEY) window.dispatchEvent(new CustomEvent(EVENTO_CONVERSAS))
+  })
 }
 
 function garantirStore() {
@@ -220,7 +227,6 @@ export function htmlBolha(role, texto, extraHtml = '') {
   return `<div class="assistente-msg assistente-msg-${role}"><div class="assistente-bubble">${escapar(texto).replace(/\n/g, '<br>')}${extraHtml}</div></div>`
 }
 
-/** Renderiza mensagem do histórico (inclui card de prévia persistido). */
 export function elMensagemHistorico(m) {
   const wrap = document.createElement('div')
   const role = m?.role === 'assistant' ? 'assistant' : 'user'
@@ -246,7 +252,6 @@ function htmlCamposPrevia(campos = [], { editavel = true } = {}) {
     .join('')
 }
 
-/** Card Aprovar / Editar / Cancelar (prévia de escrita ou exclusão). Persistido no histórico. */
 export function htmlConfirmacao(confirmacao) {
   if (!confirmacao?.id) return ''
   const p = confirmacao.preview || {}
@@ -308,7 +313,6 @@ function paraApiHistorico(hist) {
   }))
 }
 
-/** Atualiza a prévia salva na mensagem do histórico (sobrevive a reload). */
 export function atualizarConfirmacaoHistorico(confirmId, patch = {}) {
   const hist = lerHistorico()
   const idx = hist.findIndex((m) => m?.confirmacao?.id === confirmId)
@@ -330,7 +334,6 @@ export function atualizarConfirmacaoHistorico(confirmId, patch = {}) {
   return next
 }
 
-/** @returns {Promise<boolean|null>} true/false = status; null = falha de rede (indefinido) */
 export async function carregarStatusIa() {
   try {
     const s = await assistenteApi.status()
@@ -341,7 +344,7 @@ export async function carregarStatusIa() {
   }
 }
 
-/** AbortController do envio em andamento — cancelado ao trocar/criar/excluir conversa. */
+// AbortController do envio em andamento — cancelado ao trocar/criar/excluir conversa.
 let chatAbortAtual = null
 
 export function abortarEnvioChat() {
@@ -379,6 +382,7 @@ export async function enviarMensagemChat({
   abortarEnvioChat()
   const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null
   chatAbortAtual = ctrl
+  let porTimeout = false
   if (signalExterno) {
     if (signalExterno.aborted) ctrl?.abort()
     else signalExterno.addEventListener('abort', () => ctrl?.abort(), { once: true })
@@ -386,6 +390,7 @@ export async function enviarMensagemChat({
   const timer =
     ctrl && timeoutMs > 0
       ? setTimeout(() => {
+          porTimeout = true
           try {
             ctrl.abort()
           } catch {
@@ -404,6 +409,14 @@ export async function enviarMensagemChat({
       },
       ctrl ? { signal: ctrl.signal } : undefined
     )
+  } catch (erro) {
+    if (porTimeout && (erro?.codigo === 'abortado' || erro?.name === 'AbortError')) {
+      const e = new Error('A IA demorou demais para responder.')
+      e.codigo = 'timeout'
+      e.status = 504
+      throw e
+    }
+    throw erro
   } finally {
     if (timer) clearTimeout(timer)
     if (chatAbortAtual === ctrl) chatAbortAtual = null
@@ -558,7 +571,6 @@ export function ligarConfirmacoes(container, { avisar = () => {}, aoAtualizarHis
         preview: hist.find((m) => m.confirmacao?.id === id)?.confirmacao?.preview,
         resultado: 'Operação cancelada.'
       })
-      // Substitui a bolha inteira se possível
       const msg = box.closest('.assistente-msg')
       if (msg) {
         const bolha = msg.querySelector('.assistente-bubble')

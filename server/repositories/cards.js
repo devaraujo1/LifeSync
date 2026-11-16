@@ -81,7 +81,6 @@ export const mapearLancamento = (r) => ({
 
 export function criarRepoCartoes(db) {
   return {
-    /* ---------- Cartões ---------- */
     async listarCartoes(userId) {
       const l = await db.query(`${SELECT_CARTAO} where c.user_id = $1 order by c.active desc, lower(c.name), c.id`, [userId])
       return l.map(mapearCartao)
@@ -114,8 +113,6 @@ export function criarRepoCartoes(db) {
       const ok = await atualizarCampos(db, 'credit_cards', userId, id, mapa)
       return ok ? this.obterCartao(userId, id) : null
     },
-
-    /* ---------- Faturas ---------- */
     // Faturas com total e valor pago calculados no banco (numeric, sem erro de ponto flutuante).
     // `ate`/`de` filtram pela data de fechamento. `relevantesDesde`: só as pendentes ou que ainda não fecharam.
     async listarFaturas(userId, { cartaoId, de, ate, relevantesDesde } = {}) {
@@ -158,8 +155,6 @@ export function criarRepoCartoes(db) {
       )
       return n(r.total)
     },
-
-    /* ---------- Lançamentos (parcelas) ---------- */
     async listarLancamentos(userId, { cartaoId, de, ate, limite = 1000 } = {}) {
       const l = await db.query(
         `${SELECT_LANCAMENTO} where i.user_id = $1
@@ -202,8 +197,6 @@ export function criarRepoCartoes(db) {
         tipoCompra: r.kind === 'purchase' ? 'compra' : r.kind === 'refund' ? 'estorno' : 'ajuste'
       }))
     },
-
-    /* ---------- Compras ---------- */
     async obterCompra(userId, id) {
       const [r] = await db.query(
         `select id, card_id, kind, description, category, total_amount::text as total_amount, installments,
@@ -332,8 +325,6 @@ export function criarRepoCartoes(db) {
       )
       return r.length > 0
     },
-
-    /* ---------- Pagamentos ---------- */
     // Grava o pagamento só se o valor couber no saldo pendente da fatura e a chave ainda não tiver sido usada.
     async registrarPagamento(userId, { faturaId, valor, data, chave }) {
       const [r] = await db.query(

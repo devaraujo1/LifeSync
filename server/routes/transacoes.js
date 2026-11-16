@@ -59,7 +59,6 @@ export function criarRotasTransacoes({ repos }) {
 const zCategoria = z.object({ tipo: zTipo, nome: zTexto(1, 40) })
 const LIMITE_CATEGORIAS = 60
 
-// Categorias criadas pelo usuário. As padrão ficam no front; as movimentações guardam só o nome.
 export function criarRotasCategorias({ repos }) {
   const router = Router()
   const { transacoes } = repos

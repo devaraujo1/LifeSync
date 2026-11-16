@@ -1,11 +1,8 @@
-// Acesso ao financeiro da conta (API). Valores monetários trafegam como números com 2 casas;
-// somas e saldos oficiais são calculados no servidor com aritmética exata.
 import { api } from './api.js'
 
 const PAGINA = 2000
 
 export const financeiroApi = {
-  // Busca todas as movimentações, página a página.
   async listar() {
     const todas = []
     for (let offset = 0; ; offset += PAGINA) {
@@ -29,7 +26,6 @@ export const financeiroApi = {
   async removerMeta() {
     await api.delete('/meta')
   },
-  // Categorias criadas pelo usuário: { id, tipo, nome }
   async listarCategorias() {
     return (await api.get('/categorias')).categorias
   },
@@ -39,7 +35,6 @@ export const financeiroApi = {
   async removerCategoria(id) {
     await api.delete(`/categorias/${encodeURIComponent(id)}`)
   },
-  // { mes, entradas, despesas, guardado, saldo, totalGuardado }
   async resumo(mes) {
     return (await api.get(`/transacoes/resumo?mes=${mes}`)).resumo
   }

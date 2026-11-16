@@ -11,7 +11,6 @@ const TZ = 'America/Sao_Paulo'
 const espera = (ms) => new Promise((r) => setTimeout(r, ms))
 let contador = 0
 
-// Usuário novo, logado e (opcionalmente) com o calendário conectado.
 async function novo({ conectar = true } = {}) {
   const sub = `cal-${++contador}`
   const sessao = await entrar(amb.app, { sub })

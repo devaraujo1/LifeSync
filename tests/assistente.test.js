@@ -177,7 +177,6 @@ describe('assistente', () => {
         }
       }
     }
-    // segundo round texto
     let n = 0
     llm.chat = async () => {
       n += 1
@@ -306,7 +305,8 @@ describe('assistente', () => {
     expect(classificarIntencaoEscrita('não quero registrar, só conta mesmo')).toBe('bloquear_escrita')
     expect(classificarIntencaoEscrita('quanto gastei este mês?')).toBe('bloquear_escrita')
     expect(classificarIntencaoEscrita('gastei 16 no açaí')).toBe('liberar')
-    expect(classificarIntencaoEscrita('sim')).toBe('liberar')
+    expect(classificarIntencaoEscrita('sim')).toBe('bloquear_escrita')
+    expect(classificarIntencaoEscrita('ok')).toBe('bloquear_escrita')
     const filtradas = filtrarToolsPorIntencao(DEFINICOES_TOOLS, 'gastei 7 no uber hoje d aquanto?')
     expect(filtradas.some((t) => t.name === 'criar_transacao')).toBe(false)
     expect(filtradas.some((t) => t.name === 'listar_resumo_financeiro')).toBe(true)
@@ -406,6 +406,46 @@ describe('assistente', () => {
     expect(edit.status).toBe(200)
     expect(edit.body.precisaConfirmacao.preview.destaque).toMatch(/18/)
     expect(edit.body.precisaConfirmacao.preview.campos.some((c) => c.valor === 'Açaí grande')).toBe(true)
+
+    // Confirm deve usar os args já editados (não o valor antigo da prévia).
+    const conf = await cl.post('/api/assistente/confirmar', { confirmId: id })
+    expect(conf.status).toBe(200)
+    const lista = (await cl.get('/api/transacoes')).body.transacoes
+    expect(lista).toHaveLength(1)
+    expect(lista[0]).toMatchObject({ description: 'Açaí grande', amount: 18.5 })
+    await a.fechar()
+  })
+
+  it('falha ao confirmar restaura a pendência para retry', async () => {
+    const idFantasma = '00000000-0000-4000-8000-000000000099'
+    const llm = {
+      nome: 'mock',
+      async chat() {
+        return {
+          type: 'tool_calls',
+          calls: [
+            {
+              id: 't1',
+              name: 'pedir_confirmacao_exclusao',
+              args: { tipo: 'transacao', id: idFantasma, resumo: 'item inexistente' }
+            }
+          ]
+        }
+      }
+    }
+    const a = await criarAmbiente({ env: { AI_API_KEY: 'k' }, llm })
+    const cl = cliente(await entrar(a.app, { sub: 'ai-restore' }))
+    const r = await cl.post('/api/assistente/chat', { mensagem: 'apaga aquela transação' })
+    const id = r.body.precisaConfirmacao?.id
+    expect(id).toBeTruthy()
+
+    const falha = await cl.post('/api/assistente/confirmar', { confirmId: id })
+    expect(falha.status).toBeGreaterThanOrEqual(400)
+
+    // Pendência deve ter sido restaurada — segundo confirm ainda é válido (mesmo erro 404).
+    const retry = await cl.post('/api/assistente/confirmar', { confirmId: id })
+    expect(retry.status).toBeGreaterThanOrEqual(400)
+    expect(String(retry.body?.erro?.mensagem || '')).not.toMatch(/expirada|inválida/i)
     await a.fechar()
   })
 

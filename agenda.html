@@ -13,11 +13,15 @@
   <script>
     /* Aplica as preferências antes da primeira pintura (evita piscar a cor padrão). */
     try {
-      var p = JSON.parse(localStorage.getItem('lifesync-preferencias')) || {}
-      var r = document.documentElement
-      if (p.destaque) r.dataset.accent = p.destaque
-      if (p.fundo) r.dataset.aurora = { animado: 'animada', estatico: 'estatica', desligado: 'desligada' }[p.fundo] || 'animada'
-      if (p.densidade) r.dataset.densidade = p.densidade
+      var dono = localStorage.getItem('lifesync-cache-dono')
+      var sessao = sessionStorage.getItem('lifesync-sessao-uid')
+      if (dono && sessao && dono === sessao) {
+        var p = JSON.parse(localStorage.getItem('lifesync-preferencias')) || {}
+        var r = document.documentElement
+        if (p.destaque) r.dataset.accent = p.destaque
+        if (p.fundo) r.dataset.aurora = { animado: 'animada', estatico: 'estatica', desligado: 'desligada' }[p.fundo] || 'animada'
+        if (p.densidade) r.dataset.densidade = p.densidade
+      }
     } catch (e) {}
   </script>
 </head>

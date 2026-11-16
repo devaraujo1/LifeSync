@@ -19,7 +19,6 @@ const prop = (schema, description) => {
   return o
 }
 
-/** Definições no formato interno (JSON Schema) usadas pelos adapters. */
 export const DEFINICOES_TOOLS = [
   {
     name: 'criar_transacao',
@@ -403,11 +402,6 @@ async function painelCartoes(ctx) {
   return { hoje, cartoes, pagoNoMes }
 }
 
-/**
- * Executa uma tool. Retorno:
- * { ok, resumo, dados?, acao?, precisaConfirmacao? }
- * Escrita: por padrão só monta prévia (precisaConfirmacao). Use ctx.forcarEscrita para gravar de verdade.
- */
 export async function executarTool(nome, argsBrutos, ctx) {
   const { repos, usuario, calendario, agora = new Date() } = ctx
   const args = argsBrutos && typeof argsBrutos === 'object' ? argsBrutos : {}

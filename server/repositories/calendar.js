@@ -38,6 +38,13 @@ export function criarRepoCalendario(db) {
       )
       return r.length > 0
     },
+    async renovarTrava(userId, segundos = 120) {
+      await db.query(
+        `update calendar_connections set sync_lock_until = now() + make_interval(secs => $2::double precision)
+          where user_id = $1`,
+        [userId, segundos]
+      )
+    },
     async liberarTrava(userId) {
       await db.query('update calendar_connections set sync_lock_until = null where user_id = $1', [userId])
     },

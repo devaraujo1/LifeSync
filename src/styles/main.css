@@ -304,12 +304,18 @@ select:focus-visible {
    Estrutura e menu lateral recolhível
    ========================================= */
 
+/* Esconde o chrome do app até exigirLogin confirmar a sessão (evita flash de UI sem auth). */
 .app {
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
   padding-left: var(--rail);
   padding-left: calc(var(--rail) + env(safe-area-inset-left, 0px));
+  visibility: hidden;
+}
+
+html[data-auth-ready='1'] .app {
+  visibility: visible;
 }
 
 .sidebar {

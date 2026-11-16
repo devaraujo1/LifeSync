@@ -1,21 +1,48 @@
+import { timingSafeEqual } from 'node:crypto'
 import { obterServidor } from '../../server/index.js'
 
-// Agendador do Netlify: sincroniza as contas conectadas a cada 15 minutos.
-// Não é "tempo real": mudanças feitas no Google aparecem em até ~15 min (ou ao abrir o dashboard).
-// Proteção: se CRON_SECRET estiver definido, exige Authorization: Bearer <secret> (ou x-cron-secret).
+function header(req, nome) {
+  const lower = nome.toLowerCase()
+  if (typeof req?.headers?.get === 'function') return req.headers.get(nome) || req.headers.get(lower) || ''
+  const h = req?.headers || {}
+  return h[nome] || h[lower] || ''
+}
+
+function secretoIgual(a, b) {
+  const x = Buffer.from(String(a))
+  const y = Buffer.from(String(b))
+  return x.length === y.length && x.length > 0 && timingSafeEqual(x, y)
+}
+
+function autorizado(req, esperado) {
+  // Invocação do scheduler Netlify (não manda Bearer).
+  const evento = String(header(req, 'x-netlify-event') || '').toLowerCase()
+  if (evento === 'schedule') return true
+
+  const auth = header(req, 'authorization')
+  const cron = header(req, 'x-cron-secret')
+  const bearer = auth.startsWith('Bearer ') ? auth.slice(7) : ''
+  return secretoIgual(bearer, esperado) || secretoIgual(cron, esperado)
+}
+
+// Em produção exige CRON_SECRET (fail-closed). Aceita Bearer/x-cron-secret OU x-netlify-event: schedule.
 export default async (req) => {
   const esperado = (process.env.CRON_SECRET || '').trim()
-  if (esperado) {
-    const auth = req?.headers?.get?.('authorization') || req?.headers?.authorization || ''
-    const header = req?.headers?.get?.('x-cron-secret') || req?.headers?.['x-cron-secret'] || ''
-    const okBearer = auth === `Bearer ${esperado}`
-    const okHeader = header === esperado
-    if (!okBearer && !okHeader) {
-      return new Response(JSON.stringify({ erro: 'nao_autorizado' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      })
-    }
+  const producao = process.env.NODE_ENV === 'production'
+
+  if (producao && !esperado) {
+    console.error('[calendar-sync] CRON_SECRET ausente em produção')
+    return new Response(JSON.stringify({ erro: 'cron_nao_configurado' }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' }
+    })
+  }
+
+  if (esperado && !autorizado(req, esperado)) {
+    return new Response(JSON.stringify({ erro: 'nao_autorizado' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
 
   const { calendario } = obterServidor()

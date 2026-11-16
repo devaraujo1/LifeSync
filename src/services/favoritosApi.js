@@ -1,4 +1,3 @@
-// Favoritos da conta (API).
 import { api } from './api.js'
 
 export const favoritosApi = {

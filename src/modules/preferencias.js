@@ -14,7 +14,6 @@ export const DESTAQUES = [
   { id: 'ambar', nome: 'Âmbar', cor: '#fbbf24' }
 ]
 
-// Cartões da página inicial que podem ser exibidos ou ocultados.
 export const CARTOES = [
   { id: 'resumo-tarefas', grupo: 'Indicadores', nome: 'Tarefas pendentes' },
   { id: 'resumo-agenda', grupo: 'Indicadores', nome: 'Próximo compromisso' },
@@ -51,7 +50,6 @@ let versaoLocal = 0 // muda a cada alteração feita pelo usuário (evita que um
 
 export const lerPreferencias = () => atuais
 
-// Dados da conta Google: usados só como padrão quando o usuário não definiu nome/foto nas preferências.
 let externo = { nome: '', foto: null }
 
 export function definirUsuarioExterno({ nome, foto }) {
@@ -83,8 +81,6 @@ export function fotoPerfil() {
   return atuais.foto || externo.foto || perfil.avatar || null
 }
 
-/* ---------- Aplicação no documento ---------- */
-
 export function aplicarPreferencias(prefs = atuais) {
   const raiz = document.documentElement
   raiz.dataset.accent = prefs.destaque
@@ -96,9 +92,6 @@ export function aplicarPreferencias(prefs = atuais) {
   })
 }
 
-/* ---------- Atualização ---------- */
-
-// Aceita um objeto parcial; clima e cartoes são mesclados campo a campo.
 export function atualizarPreferencias(parcial) {
   const proximas = mesclar({
     ...atuais,
@@ -126,8 +119,6 @@ export function restaurarPadroes() {
   window.dispatchEvent(new CustomEvent(EVENTO, { detail: atuais }))
   agendarEnvio(atuais) // sobrescreve também na conta (nome vazio e foto removida)
 }
-
-/* ---------- Sincronização com a conta ---------- */
 
 // As alterações valem na hora (cache local) e são enviadas à conta logo depois, agrupadas.
 // Se o envio falhar, ficam marcadas como pendentes e são reenviadas no próximo carregamento.
@@ -166,7 +157,6 @@ async function enviarFila() {
   }
 }
 
-// Envia na saída da página o que ainda estiver na fila (best effort).
 window.addEventListener('pagehide', () => {
   if (!Object.keys(fila).length) return
   clearTimeout(temporizador)
@@ -200,7 +190,6 @@ export async function sincronizarComServidor() {
   if (Object.keys(resto).length || foto) aplicarEstado(preferencias)
 }
 
-// Várias abas abertas permanecem sincronizadas.
 window.addEventListener('storage', (evento) => {
   if (evento.key !== CHAVE) return
   atuais = mesclar(lerJSON(CHAVE, null))
