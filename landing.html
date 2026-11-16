@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="LifeSync — Personal Life OS. Sua vida. Em sincronia. Tudo conectado. Uma vida organizada."
+      content="LifeSync — Personal Life OS. Workspace, tarefas, agenda, finanças, favoritos e assistente IA no mesmo lugar."
     />
     <meta name="theme-color" content="#050505" />
     <title>LifeSync — Personal Life OS</title>
@@ -30,14 +30,14 @@
         >
       </a>
       <nav class="lp-nav-links" aria-label="Seções">
+        <a href="#workspace">Workspace</a>
         <a href="#modulos">Módulos</a>
-        <a href="#inteligencia">Inteligência</a>
+        <a href="#inteligencia">Assistente</a>
         <a href="#integracoes">Integrações</a>
-        <a href="#prova">Produto</a>
       </nav>
       <div class="lp-nav-cta">
         <a class="btn" href="index.html">Entrar</a>
-        <a class="btn btn-primary" href="index.html">Começar grátis</a>
+        <a class="btn btn-primary" href="index.html">Começar</a>
       </div>
     </header>
 
@@ -46,11 +46,11 @@
         <div class="lp-hero-copy">
           <p class="kicker" data-enter>Personal Life OS</p>
           <h1 class="lp-headline" data-enter>Sua vida. Em sincronia.</h1>
-          <p class="lp-sub" data-enter>Tudo conectado. Uma vida organizada.</p>
-          <p class="lp-promise" data-enter>Foque no que importa. Nós cuidamos do resto.</p>
+          <p class="lp-sub" data-enter>Workspace, agenda, tarefas, finanças e assistente no mesmo sistema.</p>
+          <p class="lp-promise" data-enter>O que você vê no dashboard é o que o LifeSync entrega.</p>
           <div class="lp-cta-row" data-enter>
-            <a class="btn btn-primary lp-btn-lg" href="index.html">Começar grátis</a>
-            <a class="btn lp-btn-lg" href="index.html">Entrar</a>
+            <a class="btn btn-primary lp-btn-lg" href="index.html">Entrar com Google</a>
+            <a class="btn lp-btn-lg" href="#modulos">Ver módulos</a>
           </div>
         </div>
 
@@ -72,16 +72,16 @@
                 <div class="lp-dash-bar"><span></span><span></span><span></span></div>
                 <div class="lp-dash-grid">
                   <div class="lp-dash-card">
-                    <span>Saldo do mês</span>
-                    <strong class="lp-metric">R$ 4.280</strong>
+                    <span>Tarefas pendentes</span>
+                    <strong class="lp-metric">3</strong>
                   </div>
                   <div class="lp-dash-card">
-                    <span>Tarefas</span>
-                    <strong class="lp-metric">6 / 10</strong>
+                    <span>Próximo compromisso</span>
+                    <strong class="lp-metric">14:30</strong>
                   </div>
                   <div class="lp-dash-card lp-dash-wide">
-                    <strong>Workspace</strong>
-                    <span>Finanças, agenda e tarefas no mesmo sistema.</span>
+                    <strong>Saldo do mês</strong>
+                    <span>Receitas, despesas e cartões no Financeiro.</span>
                   </div>
                 </div>
               </div>
@@ -93,11 +93,10 @@
 
       <section class="lp-section" id="problema" data-reveal>
         <p class="kicker">O problema</p>
-        <h2>Sua vida espalhada em várias ferramentas</h2>
+        <h2>Rotina espalhada em vários lugares</h2>
         <p class="lp-lead">
-          Planilha de dinheiro, app de tarefas, calendário do Google, e-mail, anotações e
-          documentos — cada um num lugar. Você perde tempo sincronizando o que deveria estar
-          junto.
+          Compromissos no Google, tarefas num app, gastos em outra planilha e links favoritos
+          perdidos no navegador. Você gasta energia só para juntar o quadro do dia.
         </p>
       </section>
 
@@ -105,99 +104,110 @@
         <p class="kicker">A solução</p>
         <h2>Um Personal Life OS conectado</h2>
         <p class="lp-lead">
-          LifeSync centraliza finanças, tarefas, projetos, calendário, documentos, e-mails e
-          anotações. Você entra num ambiente único: mesma navegação, busca, tema e identidade.
-          Use só os módulos que precisa.
+          LifeSync concentra o que a dashboard já mostra: visão geral do dia, agenda com Google
+          Calendar, tarefas, financeiro com cartões, favoritos e um assistente de IA que registra
+          com a sua confirmação.
         </p>
       </section>
 
+      <section class="lp-section" id="workspace" data-reveal>
+        <p class="kicker">Dashboard</p>
+        <h2>Workspace: a visão geral do dia</h2>
+        <p class="lp-lead">
+          Na home você vê saudação, clima, relógio, busca no Google, atalhos de favoritos e o
+          resumo do que importa agora.
+        </p>
+        <ul class="lp-bullets">
+          <li>Indicadores: tarefas pendentes, próximo compromisso e saldo do mês</li>
+          <li>Painel de agenda com os próximos eventos</li>
+          <li>Painel de tarefas do dia com progresso</li>
+          <li>Atalhos dos seus favoritos direto na home</li>
+        </ul>
+      </section>
+
       <section class="lp-section" id="modulos" data-reveal>
-        <p class="kicker">Workspace</p>
-        <h2>Módulos que trabalham juntos</h2>
-        <p class="lp-lead">Estudantes, profissionais, freelancers e empreendedores — cada um monta o seu OS.</p>
+        <p class="kicker">Menu do app</p>
+        <h2>Os mesmos módulos da dashboard</h2>
+        <p class="lp-lead">Navegação lateral igual ao produto: cada item abre uma área real do LifeSync.</p>
         <div class="lp-modules">
           <article class="lp-module">
-            <h3>Finanças</h3>
-            <p>Receitas, despesas, contas, cartões, metas, relatórios e import CSV/OFX.</p>
+            <h3>Workspace</h3>
+            <p>Home com clima, relógio, busca, atalhos, resumo do dia, agenda e tarefas.</p>
           </article>
           <article class="lp-module">
-            <h3>Tarefas e projetos</h3>
-            <p>Lista, kanban, subtarefas e progresso no mesmo fluxo.</p>
+            <h3>Assistente</h3>
+            <p>Chat em português para registrar gastos, eventos e tarefas — com prévia e confirmação.</p>
           </article>
           <article class="lp-module">
-            <h3>Calendário</h3>
-            <p>Dia, semana, mês e agenda — com sync Google por etapas.</p>
+            <h3>Tarefas</h3>
+            <p>Únicas ou recorrentes, prioridade, checklist, status e progresso do dia.</p>
           </article>
           <article class="lp-module">
-            <h3>Documentos</h3>
-            <p>Arquivos e referências no mesmo sistema da sua rotina.</p>
-          </article>
-          <article class="lp-module">
-            <h3>E-mails</h3>
-            <p>Gmail autorizado sugere tarefa, evento ou lançamento — você confirma.</p>
+            <h3>Agenda</h3>
+            <p>Compromissos locais com sincronização do Google Calendar.</p>
           </article>
           <article class="lp-module">
             <h3>Favoritos</h3>
-            <p>Links e atalhos do dia a dia, organizados por categoria.</p>
+            <p>Links e atalhos organizados por categoria, também na home.</p>
           </article>
           <article class="lp-module">
-            <h3>Assistente IA</h3>
-            <p>Registra gastos, agenda e tarefas por chat. Pergunta o que faltar; exclusões pedem confirmação.</p>
+            <h3>Financeiro</h3>
+            <p>Receitas, despesas, metas, categorias, cartões de crédito, faturas e PDF.</p>
           </article>
           <article class="lp-module">
-            <h3>Integrações</h3>
-            <p>Google e IA conectados ao mesmo perfil, tema e histórico.</p>
+            <h3>Meu Perfil</h3>
+            <p>Nome, tema, densidade, aurora e cidade do clima.</p>
           </article>
         </div>
       </section>
 
       <section class="lp-section lp-intel" id="inteligencia" data-reveal>
         <p class="kicker">Inteligência</p>
-        <h2>Assistente pessoal no chat</h2>
+        <h2>Assistente no chat e no dock</h2>
         <p class="lp-lead">
-          Fale em português: o assistente grava o que estiver claro (gasto, entrada, evento, tarefa)
-          e <strong>pergunta</strong> quando faltar dado. <strong>Apagar</strong> sempre pede confirmação.
+          Fale em português: o assistente monta a prévia do que for gravar (gasto, entrada, evento,
+          tarefa) e só aplica depois que você aprovar. Exclusões pedem confirmação.
         </p>
         <ul class="lp-bullets">
-          <li>“Gastei 16 no açaí” → lança despesa categorizada</li>
-          <li>Agenda, tarefas e favoritos pelo mesmo chat</li>
-          <li>Provedor de IA plugável (Gemini, OpenAI-compat…)</li>
-          <li>Exclusões só depois da sua confirmação</li>
+          <li>“Gastei 16 no açaí” → prévia de despesa categorizada</li>
+          <li>Agenda e tarefas pelo mesmo chat</li>
+          <li>Dock rápido nas páginas do app</li>
+          <li>Provedor de IA configurável no servidor (Gemini / OpenAI-compat)</li>
         </ul>
       </section>
 
       <section class="lp-section" id="integracoes" data-reveal>
         <p class="kicker">Sistema</p>
-        <h2>Integrações por etapas</h2>
-        <p class="lp-lead">Conecte o que já usa. Notificações, perfil e assinatura no mesmo lugar.</p>
+        <h2>Integrações que já existem</h2>
+        <p class="lp-lead">Login Google, calendário sincronizado e assistente no mesmo perfil.</p>
         <div class="lp-integrations">
+          <span class="lp-pill">Login Google</span>
           <span class="lp-pill">Google Calendar</span>
-          <span class="lp-pill">Gmail (autorizado)</span>
           <span class="lp-pill">Assistente IA</span>
-          <span class="lp-pill">Import CSV / OFX</span>
-          <span class="lp-pill">Notificações</span>
-          <span class="lp-pill">Perfil e tema</span>
+          <span class="lp-pill">Cartões e faturas</span>
+          <span class="lp-pill">Relatório PDF</span>
+          <span class="lp-pill">Tema e personalização</span>
         </div>
       </section>
 
       <section class="lp-section" id="prova" data-reveal>
         <p class="kicker">Produto</p>
-        <h2>Um ambiente. Vários módulos.</h2>
-        <p class="lp-lead">Visão geral, finanças e tarefas compartilham a mesma casca LifeSync.</p>
+        <h2>Mesma casca em todas as telas</h2>
+        <p class="lp-lead">Workspace, assistente, agenda, tarefas, favoritos e financeiro compartilham menu, tema e conta.</p>
         <div class="lp-hero-visual" style="margin-inline: auto">
           <div class="lp-dash-frame">
             <div class="lp-dash-bar"><span></span><span></span><span></span></div>
             <div class="lp-dash-grid lp-dash-grid-proof">
               <div class="lp-dash-card">
                 <strong>Workspace</strong>
-                <span>Saudação, clima, atalhos e painéis.</span>
+                <span>Resumo do dia, clima e atalhos.</span>
               </div>
               <div class="lp-dash-card">
                 <strong>Agenda</strong>
-                <span>Compromissos no calendário mensal.</span>
+                <span>Eventos com sync Google.</span>
               </div>
               <div class="lp-dash-card">
-                <strong>Finanças</strong>
+                <strong>Financeiro</strong>
                 <span>Saldo, metas e cartões.</span>
               </div>
               <div class="lp-dash-card">
@@ -210,11 +220,11 @@
       </section>
 
       <section class="lp-section lp-final" data-reveal>
-        <h2>Pronto para organizar a vida num sistema só?</h2>
+        <h2>Pronto para usar o mesmo sistema da dashboard?</h2>
         <p class="lp-lead">Your Life. In Sync. Everything connected. One life organized.</p>
         <div class="lp-cta-row">
-          <a class="btn btn-primary lp-btn-lg" href="index.html">Começar grátis</a>
-          <a class="btn lp-btn-lg" href="index.html">Entrar</a>
+          <a class="btn btn-primary lp-btn-lg" href="index.html">Entrar com Google</a>
+          <a class="btn lp-btn-lg" href="index.html">Abrir app</a>
         </div>
       </section>
     </main>
@@ -226,10 +236,10 @@
           ><span class="brand-life">Life</span><span class="brand-sync">Sync</span></span
         >
       </a>
-      <p class="lp-footer-copy">Personal Life OS · Foque no que importa.</p>
+      <p class="lp-footer-copy">Personal Life OS · Workspace real, sem promessa inventada.</p>
       <div class="lp-footer-links">
-        <a href="mailto:ola@example.com">Suporte</a>
-        <a href="#solucao">Sobre</a>
+        <a href="#workspace">Workspace</a>
+        <a href="#modulos">Módulos</a>
         <a href="index.html">Entrar</a>
       </div>
     </footer>
