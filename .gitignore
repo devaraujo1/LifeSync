@@ -11,19 +11,5 @@ dist/
 # Netlify
 .netlify/
 
-# Sistema e editores
-.DS_Store
-Thumbs.db
-.idea/
-.vscode/
-*.log
-npm-debug.log*
-
-# Cursor / agentes de IA (local only)
-.cursor/
-.cursor-map/
-.agents/
-AGENTS.md
-
 # Zips de entrega
 *.zip
