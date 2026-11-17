@@ -1,5 +1,7 @@
 # Referência da API
 
+> Exemplos didáticos de GET / POST / PATCH / PUT / DELETE com `fetch` e DOM: [EXEMPLOS-FETCH.md](./EXEMPLOS-FETCH.md).
+
 Base: `/api` (mesma origem do site). Todas as respostas são JSON, com `Cache-Control: no-store`.
 
 **Autenticação:** cookie de sessão `HttpOnly` (`__Host-sid` em produção). **Escritas** (`POST`, `PUT`, `PATCH`, `DELETE`) exigem o cabeçalho `X-CSRF-Token` com o valor de `csrfToken` retornado por `GET /api/auth/me`.

@@ -1,90 +1,167 @@
 ﻿# LifeSync — v1.0
 
-LifeSync — dashboard pessoal minimalista (visual verde-petróleo/ciano) para usar como página inicial do navegador. Reúne relógio, clima, pesquisa do Google, tarefas, financeiro, agenda com **sincronização bidirecional com o Google Calendar** e favoritos. Os dados ficam na **sua conta** (login com Google), e não mais só no navegador, então acompanham você em qualquer dispositivo.
+**Personal Life OS** — dashboard pessoal (visual verde-petróleo/ciano) para usar como página inicial do navegador. Reúne workspace, tarefas, financeiro (com cartões), agenda com **sincronização bidirecional com o Google Calendar**, favoritos, personalização e **assistente de IA**.
 
-> Projeto pessoal, desenhado para **uma conta autorizada** (lista de e-mails permitidos). Não é um serviço multiusuário aberto.
+Os dados ficam na **sua conta** (login com Google) e acompanham você em qualquer dispositivo.
+
+> Projeto pensado para **contas autorizadas** (`ALLOWED_EMAILS`). Não é um serviço multiusuário aberto.
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [docs/API.md](docs/API.md) | Referência completa das rotas REST |
+| [docs/EXEMPLOS-FETCH.md](docs/EXEMPLOS-FETCH.md) | Tutorial didático: GET, POST, PATCH, PUT, DELETE com `fetch` + DOM |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Variáveis de ambiente, Google OAuth, Neon, Netlify |
+| [`.env.example`](.env.example) | Modelo de configuração local/produção |
+
+## Checklist do enunciado (disciplina)
+
+| Requisito | Onde está no projeto |
+|---|---|
+| Arquitetura REST | Rotas em `server/routes/*` sob `/api` — ver [docs/API.md](docs/API.md) |
+| Exemplos práticos de todos os métodos | [docs/EXEMPLOS-FETCH.md](docs/EXEMPLOS-FETCH.md) |
+| Função `fetch` do JavaScript | [`src/services/api.js`](src/services/api.js) (usado por todos os `*Api.js`) |
+| Node.js + Express | [`server/app.js`](server/app.js), entrada local [`server/dev.js`](server/dev.js) |
+| Mobile first | CSS em `src/styles/*` (base mobile + `@media (min-width: …)`) |
+| DOM para exibir dados | Páginas em `src/pages/*` e módulos em `src/modules/*` atualizam a interface após o `fetch` |
 
 ## Funcionalidades
 
 | Módulo | O que faz |
 |---|---|
-| **Início** | Saudação, data e relógio, clima, pesquisa do Google (abre em nova guia), atalhos, próximas tarefas e eventos, saldo do mês |
-| **Tarefas** | Únicas e recorrentes (dias da semana), conclusão por dia, progresso do dia |
-| **Financeiro** | Resumo, gráficos, lançamentos e cartões numa única página; filtros por mês/ano, meta e relatório em PDF |
-| **Agenda** | Calendário mensal, eventos com recorrência e exceções, categorias, painel de conexão com o Google Calendar |
-| **Favoritos** | Links por categoria, atalhos fixados na página inicial |
-| **Perfil** | Cores, fundo, densidade, hora 24h, início da semana, cidade do clima, foto |
+| **Workspace (Início)** | Saudação, data/relógio, clima, pesquisa Google, atalhos de favoritos, resumo (tarefas, próximo evento, saldo) |
+| **Assistente** | Chat em português: prévia de gastos/eventos/tarefas; confirmação antes de gravar ou excluir; dock nas páginas |
+| **Tarefas** | Únicas e recorrentes, prioridade, checklist, status por dia, progresso |
+| **Financeiro** | Lançamentos, categorias, meta, resumo, cartões/faturas/parcelas, relatório PDF |
+| **Agenda** | Calendário mensal, recorrência, sync com Google Calendar |
+| **Favoritos** | Links por categoria; atalhos fixados na home |
+| **Meu Perfil** | Tema, aurora, densidade, cidade do clima, foto, fuso |
 
-Tarefas e eventos do calendário são **entidades independentes**: uma tarefa nunca vira evento.
+Tarefas e eventos são **entidades independentes**: uma tarefa nunca vira evento automaticamente.
 
 ## Tecnologias
-- **Front-end:** Vite + JavaScript (sem framework), HTML/CSS próprios
-- **Back-end:** Node.js + Express, empacotado como função serverless do Netlify
-- **Banco:** PostgreSQL no [Neon](https://neon.tech) (driver HTTP, sem conexões persistentes), migrações SQL versionadas
-- **Autenticação:** Google OAuth 2.0 / OpenID Connect (fluxo de código no servidor, PKCE)
-- **Integrações:** Google Calendar API, Open-Meteo (clima)
-- **Testes:** Vitest + Supertest + PGlite (PostgreSQL real em memória)
 
-## Como funciona (resumo)
+- **Front-end:** Vite + JavaScript vanilla (MPA), HTML/CSS próprios
+- **Back-end:** Node.js + **Express**, empacotado como função serverless Netlify
+- **Banco:** PostgreSQL no [Neon](https://neon.tech) (driver HTTP), migrations SQL versionadas
+- **Autenticação:** Google OAuth 2.0 / OIDC (código no servidor, PKCE)
+- **Integrações:** Google Calendar API, Open-Meteo (clima), provedor de IA (Gemini / OpenAI-compat)
+- **Testes:** Vitest + Supertest + PGlite
+
+## Arquitetura REST (visão geral)
+
 ```
-Navegador ──(cookie de sessão HttpOnly)──► /api/* (função Netlify, Express) ──► Neon (PostgreSQL)
-                                                  └──► Google OAuth / Google Calendar
+Navegador (HTML/CSS/JS + DOM)
+    │  fetch('/api/...', { credentials: 'same-origin' })
+    ▼
+Express (server/app.js → routes → services → repositories)
+    ├── Neon PostgreSQL
+    ├── Google OAuth / Calendar
+    └── Provedor de IA (assistente)
 ```
-O servidor identifica o usuário só pela sessão (nunca por um `user_id` enviado pelo navegador), valida toda entrada e isola os dados por conta.
+
+Em produção, `/api/*` é reescrito para a função Netlify `api` ([`netlify.toml`](netlify.toml)).
+
+O servidor identifica o usuário **somente pela sessão** (cookie), nunca por um `user_id` enviado pelo cliente. Escritas exigem CSRF.
+
+## Partes do projeto (explicação)
+
+### Front-end
+
+| Pasta / arquivos | Função |
+|---|---|
+| `*.html` | Páginas MPA (`index`, `tarefas`, `financeiro`, `agenda`, `favoritos`, `assistente`, `personalizar`, `landing`) |
+| `src/entradas/` | Boot de cada página (CSS + `exigirLogin` + import da página) |
+| `src/pages/` | Lógica de tela; monta/atualiza o **DOM** com os dados da API |
+| `src/modules/` | Widgets reutilizáveis (shell/menu, clima, agenda, assistente, PDF…) |
+| `src/services/` | Cliente HTTP (`api.js` + `*Api.js`), auth/guarda, storage |
+| `src/styles/` | CSS **mobile-first** por área |
+
+### Back-end
+
+| Pasta | Função |
+|---|---|
+| `server/app.js` | Monta o app Express e monta as rotas `/api` |
+| `server/routes/` | Endpoints REST (auth, tarefas, transações, cartões, eventos, assistente…) |
+| `server/services/` | Regras de negócio (Google, sync do calendário, assistente) |
+| `server/repositories/` | Acesso SQL ao Neon |
+| `server/middleware/` | Sessão, CSRF/origem, rate limit, erros |
+| `server/dev.js` | Sobe a API local (`npm run dev:api`) |
+| `shared/` | Regras puras compartilhadas front + API (ex.: cartões) |
+
+### Infra e ops
+
+| Pasta | Função |
+|---|---|
+| `netlify/functions/` | `api.js` (Express) + `calendar-sync.js` (cron 15 min) |
+| `db/migrations/` | SQL aditivo (`001`…`010`) |
+| `scripts/` | `migrate.js`, `gerar-chaves.js` |
+| `tests/` | Suíte Vitest (API + regras) |
 
 ## Rodando localmente
-Requisitos: Node.js ≥ 20.6, uma conta no Neon e um projeto no Google Cloud.
+
+Requisitos: Node.js ≥ 20.6, Neon e Google Cloud. Detalhes em [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ```bash
 npm install
-cp .env.example .env        # Windows: copy .env.example .env
-npm run gerar-chaves        # gera SESSION_SECRET e TOKEN_ENCRYPTION_KEY
-# preencha o .env (veja docs/DEPLOY.md, seção "Variáveis de ambiente")
-npm run migrate             # cria as tabelas no banco
-npm run dev:api             # terminal 1: API em http://127.0.0.1:3001
-npm run dev                 # terminal 2: site em http://127.0.0.1:5173
+copy .env.example .env        # Windows  |  macOS/Linux: cp .env.example .env
+npm run gerar-chaves          # cole SESSION_SECRET e TOKEN_ENCRYPTION_KEY no .env
+# preencha DATABASE_URL, Google OAuth, etc. (veja docs/DEPLOY.md)
+npm run migrate
+npm run dev:api               # terminal 1: API em http://127.0.0.1:3001
+npm run dev                   # terminal 2: site em http://127.0.0.1:5173
 ```
+
 Abra **http://127.0.0.1:5173** (não `localhost`): o OAuth usa esse endereço.
 
+```bash
+npm test                      # testes automatizados
+```
 
-## Segurança
-- Segredos apenas no servidor (variáveis de ambiente); o navegador nunca recebe tokens do Google.
-- Sessão por cookie `HttpOnly`/`Secure`/`SameSite=Lax` (`__Host-` em produção); só o hash do identificador fica no banco; expira por inatividade (14 dias) e no máximo em 30 dias; nova sessão a cada login.
-- Proteção CSRF por token, verificação de origem, PKCE, `state` e `nonce`, sem redirecionamento aberto.
-- **Acesso restrito por e-mail** (`ALLOWED_EMAILS`): verificada antes de criar usuário ou sessão e a cada requisição.
-- Consultas parametrizadas, validação de toda entrada, upload de imagem conferido pela assinatura do arquivo.
-- Refresh token do Google Calendar criptografado (AES-256-GCM) e revogado ao desconectar.
-- Cabeçalhos de segurança no `netlify.toml`. A política de conteúdo (CSP) completa está em modo `Report-Only`: valide no console do navegador antes de torná-la obrigatória.
-- O limite de requisições é **por instância** da função (não é um limite global).
+## Produção (Netlify)
 
-## Google Calendar: comportamento e limites
-- **Não é instantâneo.** Sincroniza ao abrir a agenda, ao voltar para a aba, após cada alteração local e a cada 15 minutos (agendador do Netlify).
-- A primeira sincronização importa eventos a partir de 90 dias atrás e as recorrências ainda ativas.
-- Lembretes usam as **notificações nativas** do Google Calendar; o dashboard não envia notificações próprias.
-- Recorrências suportadas: diária, semanal (dias), mensal e anual, com data final e exceções. Regras mais complexas (ex.: "primeira segunda do mês") ficam **somente leitura**. Ocorrências isoladas alteradas no Google não são representadas.
-- Eventos que atravessam a meia-noite são truncados em 23:59; aniversários, foco e similares são ignorados.
-- Conflitos: vence a alteração mais recente; exclusão no Google prevalece sobre edição local simultânea.
-- No Google Cloud em modo **Teste**, o acesso ao calendário expira em 7 dias (reconectar); publicar o app remove esse limite.
+1. Configure as variáveis no painel (espelhando `.env.example`).
+2. `APP_URL` = URL HTTPS do site; `ALLOWED_EMAILS` e `CRON_SECRET` obrigatórios em produção.
+3. Cadastre os redirects OAuth de produção no Google Cloud.
+4. Deploy: conecte o Git ou `npx netlify deploy --prod --build`.
+
+Passo a passo: [docs/DEPLOY.md](docs/DEPLOY.md).
+
+## Segurança (resumo)
+
+- Segredos só no servidor; o navegador não recebe tokens do Google.
+- Sessão `HttpOnly` / `Secure` / `SameSite=Lax` (`__Host-` em produção).
+- CSRF + verificação de `Origin`/`Referer` nas escritas.
+- Acesso restrito por e-mail (`ALLOWED_EMAILS`).
+- SQL parametrizado, validação Zod, refresh token do Calendar criptografado (AES-GCM).
+
+## Google Calendar: comportamento
+
+- Sync ao abrir a agenda, ao focar a aba, após escrita local e a cada 15 min (cron).
+- Não é tempo real; lembretes usam as notificações nativas do Google.
+- Conflitos: vence a alteração mais recente; exclusão no Google prevalece.
 
 ## Limitações conhecidas
-- Fotos de perfil e capas são guardadas no PostgreSQL (limite de 600 KB cada); para volumes grandes, migre para armazenamento de objetos.
-- Sem notificações push do Calendar (canais `watch`).
-- Uso pensado para um único usuário autorizado.
+
+- Fotos de perfil no PostgreSQL (até 600 KB).
+- Sem push `watch` do Calendar.
+- Uso para contas autorizadas (lista de e-mails).
 
 ## Estrutura do repositório
+
 ```
 *.html             páginas Vite (MPA)
-src/entradas/      boot de cada HTML (auth + CSS + import da página)
-src/pages/         lógica de tela
-src/modules/       widgets reutilizáveis (shell, agenda, clima…)
-src/services/      cliente HTTP / storage / guards
-src/styles/        CSS por área
-shared/            regras puras usadas por front e API (ex.: cartões)
-server/            API Express (routes → services → repositories)
-netlify/functions/ api.js + calendar-sync.js (cron)
-db/migrations/     SQL aditivo
+src/entradas/      boot de cada HTML
+src/pages/         lógica de tela + DOM
+src/modules/       widgets (shell, clima, assistente…)
+src/services/      fetch / api / guarda
+src/styles/        CSS mobile-first
+shared/            regras puras front+API
+server/            Express (routes → services → repositories)
+netlify/functions/ api.js + calendar-sync.js
+db/migrations/     SQL versionado
 scripts/           migrate + gerar-chaves
 tests/             Vitest + PGlite
-docs/              API.md, DEPLOY.md
+docs/              API.md, EXEMPLOS-FETCH.md, DEPLOY.md
 ```
-Mapa de reconhecimento do workspace: `../mapa/`.
